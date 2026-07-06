@@ -3,12 +3,14 @@ class User {
   final String name;
   final String email;
   final String password;
+  final String? photo;
 
   const User({
     this.id,
     required this.name,
     required this.email,
     required this.password,
+    this.photo,
   });
 
   Map<String, dynamic> toMap() {
@@ -17,6 +19,7 @@ class User {
       'name': name,
       'email': email,
       'password': password,
+      'photo': photo,
     };
   }
 
@@ -26,6 +29,7 @@ class User {
       name: map['name'],
       email: map['email'],
       password: map['password'],
+      photo: map['photo'],
     );
   }
 
@@ -34,12 +38,14 @@ class User {
     String? name,
     String? email,
     String? password,
+    String? photo,
   }) {
     return User(
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       password: password ?? this.password,
+      photo: photo ?? this.photo,
     );
   }
 }

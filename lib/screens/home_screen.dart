@@ -5,17 +5,18 @@ import '../models/note.dart';
 import '../widgets/header_home.dart';
 import '../widgets/note_card.dart';
 import '../widgets/search_box.dart';
+import '../models/user.dart';
 import 'add_note_screen.dart';
 import 'package:diacritic/diacritic.dart';
 import '../widgets/dashboard_card.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  final String username;
+  final User user;
 
   const HomeScreen({
     super.key,
-    required this.username,
+    required this.user,
   });
 
   @override
@@ -249,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
 
                 HeaderHome(
-                  username: widget.username,
+                  user: widget.user,
                 ),
 
                 const SizedBox(height: 20),

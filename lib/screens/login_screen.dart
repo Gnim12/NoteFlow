@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../services/session_service.dart';
 import '../utils/app_colors.dart';
 import '../widgets/custom_textfield.dart';
 import '../widgets/gradient_button.dart';
@@ -105,11 +106,23 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
+    // ===========================
+    // Sauvegarder la session
+    // ===========================
+    await SessionService.instance.saveUserId(
+      user.id!,
+    );
+
+    // ===========================
+    // Aller à l'accueil
+    // ===========================
+    if (!mounted) return;
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => HomeScreen(
-          username: user.name,
+          user: user,
         ),
       ),
     );
@@ -140,8 +153,10 @@ class _LoginScreenState extends State<LoginScreen>
                         CustomTextField(
                           controller: emailController,
                           hintText: "Adresse email",
-                          keyboardType: TextInputType.emailAddress,
-                          prefixIcon: Icons.email_outlined,
+                          keyboardType:
+                              TextInputType.emailAddress,
+                          prefixIcon:
+                              Icons.email_outlined,
                         ),
 
                         const SizedBox(height: 20),
@@ -149,18 +164,23 @@ class _LoginScreenState extends State<LoginScreen>
                         CustomTextField(
                           controller: passwordController,
                           hintText: "Mot de passe",
-                          prefixIcon: Icons.lock_outline,
-                          obscureText: obscurePassword,
+                          prefixIcon:
+                              Icons.lock_outline,
+                          obscureText:
+                              obscurePassword,
                           suffixIcon: IconButton(
                             onPressed: () {
                               setState(() {
-                                obscurePassword = !obscurePassword;
+                                obscurePassword =
+                                    !obscurePassword;
                               });
                             },
                             icon: Icon(
                               obscurePassword
-                                  ? Icons.visibility_off_rounded
-                                  : Icons.visibility_rounded,
+                                  ? Icons
+                                      .visibility_off_rounded
+                                  : Icons
+                                      .visibility_rounded,
                               color: AppColors.primary,
                             ),
                           ),
@@ -181,12 +201,17 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: 20),
 
                         Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
+                          alignment:
+                              WrapAlignment.center,
+                          crossAxisAlignment:
+                              WrapCrossAlignment
+                                  .center,
                           children: [
                             Text(
                               "Pas encore de compte ?",
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium,
                             ),
 
                             TextButton(
@@ -194,7 +219,8 @@ class _LoginScreenState extends State<LoginScreen>
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const RegisterScreen(),
+                                    builder: (_) =>
+                                        const RegisterScreen(),
                                   ),
                                 );
                               },

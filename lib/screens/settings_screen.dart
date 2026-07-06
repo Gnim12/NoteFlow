@@ -7,6 +7,7 @@ import '../providers/theme_provider.dart';
 import '../services/pdf_service.dart';
 import 'login_screen.dart';
 import 'pinned_notes_screen.dart';
+import 'profile_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -199,6 +200,19 @@ class SettingsScreen extends StatelessWidget {
           // ==========================================
           // NOTES ÉPINGLÉES
           // ==========================================
+
+          buildTile(
+            icon: Icons.person,
+            title: "Mon profil",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProfileScreen(),
+                ),
+              );
+            },
+          ),
 
           buildTile(
             icon: Icons.push_pin,

@@ -3,13 +3,15 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../screens/settings_screen.dart';
 import '../utils/app_colors.dart';
+import '../models/user.dart';
+import 'dart:io';
 
 class HeaderHome extends StatelessWidget {
-  final String username;
+  final User user;
 
   const HeaderHome({
     super.key,
-    required this.username,
+    required this.user,
   });
 
   @override
@@ -58,10 +60,20 @@ class HeaderHome extends StatelessWidget {
                     color: Colors.white.withOpacity(.35),
                   ),
                 ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 30,
+                child: ClipOval(
+                  child: user.photo != null &&
+                          user.photo!.isNotEmpty
+                      ? Image.file(
+                          File(user.photo!),
+                          fit: BoxFit.cover,
+                          width: 58,
+                          height: 58,
+                        )
+                      : const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 30,
+                        ),
                 ),
               ),
 
@@ -84,7 +96,7 @@ class HeaderHome extends StatelessWidget {
                     const SizedBox(height: 2),
 
                     Text(
-                      username,
+                      user.name,
                       style: GoogleFonts.poppins(
                         fontSize: 23,
                         fontWeight: FontWeight.bold,

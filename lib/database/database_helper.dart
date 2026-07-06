@@ -27,7 +27,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -58,7 +58,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        photo TEXT
       )
     ''');
   }
@@ -81,6 +82,12 @@ class DatabaseHelper {
           password TEXT NOT NULL
         )
       ''');
+    }
+
+    if (oldVersion < 3) {
+      await db.execute(
+        "ALTER TABLE users ADD COLUMN photo TEXT",
+      );
     }
   }
 
@@ -194,6 +201,33 @@ class DatabaseHelper {
     return result
         .map((e) => User.fromMap(e))
         .toList();
+  }
+
+  Future<User?> getUserById(int id) async {
+    final db = await database;
+
+    final result = await db.query(
+      "users",
+      where: "id = ?",
+      whereArgs: [id],
+    );
+
+    if (result.isEmpty) {
+      return null;
+    }
+
+    return User.fromMap(result.first);
+  }
+
+  Future<int> updateUser(User user) async {
+    final db = await database;
+
+    return await db.update(
+      "users",
+      user.toMap(),
+      where: "id = ?",
+      whereArgs: [user.id],
+    );
   }
 
   Future<int> deleteUser(int id) async {
