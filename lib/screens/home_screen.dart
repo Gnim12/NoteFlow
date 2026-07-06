@@ -6,6 +6,7 @@ import '../widgets/header_home.dart';
 import '../widgets/note_card.dart';
 import '../widgets/search_box.dart';
 import '../models/user.dart';
+import '../services/session_service.dart';
 import 'add_note_screen.dart';
 import 'package:diacritic/diacritic.dart';
 import '../widgets/dashboard_card.dart';
@@ -32,15 +33,34 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Note> filteredNotes = [];
 
   bool isLoading = true;
+  User? currentUser;
 
   final TextEditingController searchController =
       TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    loadNotes();
-  }
+    void initState() {
+      super.initState();
+      initialize();
+    }
+
+    Future<void> initialize() async {
+      await loadCurrentUser();
+      await loadNotes();
+    }
+
+   Future<void> loadCurrentUser() async {
+    final id = await SessionService.instance.getUserId();
+
+    if (id == null) return;
+
+    final user =
+        await DatabaseHelper.instance.getUserById(id);
+
+    if (user == null) return;
+
+    currentUser = user;
+  } 
 
   Future<void> loadNotes() async {
     final result = await DatabaseHelper.instance.getNotes();
@@ -250,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
 
                 HeaderHome(
-                  user: widget.user,
+                  user: currentUser ?? widget.user,
                 ),
 
                 const SizedBox(height: 20),
