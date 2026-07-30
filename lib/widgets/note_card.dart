@@ -28,9 +28,7 @@ class NoteCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 18),
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
@@ -74,8 +72,7 @@ class NoteCard extends StatelessWidget {
 
                         if (note.isPinned)
                           Padding(
-                            padding:
-                                const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.only(right: 6),
                             child: Icon(
                               Icons.push_pin,
                               color: theme.colorScheme.primary,
@@ -85,8 +82,7 @@ class NoteCard extends StatelessWidget {
 
                         if (note.isFavorite)
                           const Padding(
-                            padding:
-                                EdgeInsets.only(right: 6),
+                            padding: EdgeInsets.only(right: 6),
                             child: Icon(
                               Icons.star,
                               color: Colors.amber,
@@ -132,9 +128,7 @@ class NoteCard extends StatelessWidget {
                                       : Icons.push_pin_outlined,
                                 ),
                                 title: Text(
-                                  note.isPinned
-                                      ? "Désépingler"
-                                      : "Épingler",
+                                  note.isPinned ? "Désépingler" : "Épingler",
                                 ),
                               ),
                             ),
@@ -167,8 +161,7 @@ class NoteCard extends StatelessWidget {
                                 title: Text(
                                   "Supprimer",
                                   style: TextStyle(
-                                    color:
-                                        theme.colorScheme.error,
+                                    color: theme.colorScheme.error,
                                   ),
                                 ),
                               ),
@@ -209,10 +202,8 @@ class NoteCard extends StatelessWidget {
                         const SizedBox(width: 5),
 
                         Text(
-                          DateFormat("dd MMM yyyy")
-                              .format(note.createdAt),
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(
+                          DateFormat("dd MMM yyyy").format(note.createdAt),
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.hintColor,
                           ),
                         ),
@@ -228,10 +219,8 @@ class NoteCard extends StatelessWidget {
                         const SizedBox(width: 5),
 
                         Text(
-                          DateFormat("HH:mm")
-                              .format(note.createdAt),
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(
+                          DateFormat("HH:mm").format(note.createdAt),
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.hintColor,
                           ),
                         ),

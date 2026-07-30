@@ -36,6 +36,17 @@ Le projet a été développé dans le cadre de la formation **DCLIC** afin de me
 - Base de données SQLite
 - Fonctionnement hors connexion
 
+## Données et sécurité
+
+- Chaque note est associée à son compte utilisateur et les opérations de lecture,
+  modification, suppression et export sont filtrées par propriétaire.
+- La session active est conservée localement et peut être supprimée via
+  **Se déconnecter**.
+- Les nouveaux mots de passe sont dérivés avec PBKDF2-SHA256 et un sel aléatoire.
+  Les anciens comptes sont migrés lors de leur prochaine connexion.
+- Le code de réinitialisation est une démonstration locale : une mise en production
+  nécessite un service d’envoi sécurisé (email ou SMS).
+
 ---
 
 ## Captures d'écran

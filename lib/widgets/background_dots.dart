@@ -15,7 +15,7 @@ class BackgroundDots extends StatelessWidget {
             width: 4,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(.45),
+              color: Colors.white.withValues(alpha: .45),
               shape: BoxShape.circle,
             ),
           ),
@@ -28,25 +28,16 @@ class BackgroundDots extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-
         const Positioned(
           left: 25,
           top: 120,
-          child: IgnorePointer(
-            child: SizedBox(
-              child: _DotsWidget(),
-            ),
-          ),
+          child: IgnorePointer(child: SizedBox(child: _DotsWidget())),
         ),
 
         const Positioned(
           right: 25,
           top: 360,
-          child: IgnorePointer(
-            child: SizedBox(
-              child: _DotsWidget(),
-            ),
-          ),
+          child: IgnorePointer(child: SizedBox(child: _DotsWidget())),
         ),
       ],
     );

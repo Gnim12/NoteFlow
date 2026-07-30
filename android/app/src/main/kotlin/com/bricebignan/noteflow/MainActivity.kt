@@ -1,4 +1,4 @@
-package com.example.noteflow
+package com.bricebignan.noteflow
 
 import io.flutter.embedding.android.FlutterActivity
 

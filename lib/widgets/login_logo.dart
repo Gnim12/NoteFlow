@@ -8,7 +8,6 @@ class LoginLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-
         Hero(
           tag: "logo",
           child: SizedBox(
@@ -17,14 +16,13 @@ class LoginLogo extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-
                 /// Halo 1
                 Container(
                   width: 220,
                   height: 220,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(.05),
+                    color: Colors.white.withValues(alpha: .05),
                   ),
                 ),
 
@@ -34,7 +32,7 @@ class LoginLogo extends StatelessWidget {
                   height: 180,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(.08),
+                    color: Colors.white.withValues(alpha: .08),
                   ),
                 ),
 
@@ -44,7 +42,7 @@ class LoginLogo extends StatelessWidget {
                   height: 145,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(.12),
+                    color: Colors.white.withValues(alpha: .12),
                   ),
                 ),
 
@@ -56,7 +54,7 @@ class LoginLogo extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.white.withOpacity(.40),
+                        color: Colors.white.withValues(alpha: .40),
                         blurRadius: 60,
                         spreadRadius: 15,
                       ),
@@ -73,7 +71,7 @@ class LoginLogo extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(.12),
+                        color: Colors.black.withValues(alpha: .12),
                         blurRadius: 30,
                         offset: const Offset(0, 15),
                       ),
@@ -113,7 +111,7 @@ class LoginLogo extends StatelessWidget {
           "Capturez • Organisez • Inspirez",
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: Colors.white.withOpacity(.90),
+            color: Colors.white.withValues(alpha: .90),
             fontWeight: FontWeight.w400,
           ),
         ),

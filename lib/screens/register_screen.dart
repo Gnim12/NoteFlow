@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/errors/error_presenter.dart';
 import '../services/auth_service.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/custom_textfield.dart';
@@ -29,7 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _isLoading = true;
     });
 
-    final error = await AuthService.instance.register(
+    final result = await AuthService.instance.register(
       name: _nameController.text,
       email: _emailController.text,
       password: _passwordController.text,
@@ -42,18 +43,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _isLoading = false;
     });
 
-    if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
-      );
+    if (result.isFailure) {
+      ErrorPresenter.showError(context, result.error!);
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Compte créé avec succès."),
-      ),
-    );
+    ErrorPresenter.showSuccess(context, 'Compte créé avec succès.');
 
     Navigator.pop(context);
   }
@@ -78,21 +73,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     Text(
                       "Créer un compte",
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
 
                     const SizedBox(height: 10),
 
                     Text(
                       "Créez votre compte NoteFlow",
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
 
                     const SizedBox(height: 25),
@@ -108,8 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     CustomTextField(
                       controller: _emailController,
                       hintText: "Adresse email",
-                      keyboardType:
-                          TextInputType.emailAddress,
+                      keyboardType: TextInputType.emailAddress,
                       prefixIcon: Icons.email,
                     ),
 
@@ -128,8 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _hidePassword =
-                                !_hidePassword;
+                            _hidePassword = !_hidePassword;
                           });
                         },
                       ),
@@ -138,12 +125,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 18),
 
                     CustomTextField(
-                      controller:
-                          _confirmPasswordController,
-                      hintText:
-                          "Confirmer le mot de passe",
-                      obscureText:
-                          _hideConfirmPassword,
+                      controller: _confirmPasswordController,
+                      hintText: "Confirmer le mot de passe",
+                      obscureText: _hideConfirmPassword,
                       prefixIcon: Icons.lock_outline,
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -153,8 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _hideConfirmPassword =
-                                !_hideConfirmPassword;
+                            _hideConfirmPassword = !_hideConfirmPassword;
                           });
                         },
                       ),
@@ -163,9 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 30),
 
                     GradientButton(
-                      text: _isLoading
-                          ? "Création..."
-                          : "Créer le compte",
+                      text: _isLoading ? "Création..." : "Créer le compte",
                       icon: Icons.person_add,
                       onPressed: _isLoading
                           ? null
@@ -180,16 +161,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        const Text(
-                          "Déjà un compte ? ",
-                        ),
+                        const Text("Déjà un compte ? "),
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
                           },
-                          child: const Text(
-                            "Se connecter",
-                          ),
+                          child: const Text("Se connecter"),
                         ),
                       ],
                     ),

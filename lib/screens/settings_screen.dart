@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../database/database_helper.dart';
+import '../core/errors/app_error.dart';
+import '../core/errors/error_presenter.dart';
 import '../models/note.dart';
 import '../providers/theme_provider.dart';
+import '../repositories/notes_repository.dart';
 import '../services/pdf_service.dart';
+import '../services/session_service.dart';
 import 'login_screen.dart';
 import 'pinned_notes_screen.dart';
 import 'profile_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final int userId;
+
+  const SettingsScreen({super.key, required this.userId});
+
+  static final Uri _privacyPolicyUrl = Uri.parse(
+    'https://gnim12.github.io/noteflow-legal/',
+  );
+
+  static final Uri _termsOfUseUrl = Uri.parse(
+    'https://gnim12.github.io/noteflow-legal/',
+  );
 
   // =====================================================
   // SUPPRIMER TOUTES LES NOTES
@@ -38,15 +52,12 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (confirm == true) {
-      await DatabaseHelper.instance.deleteAllNotes();
+      await NotesRepository.instance.deleteAllNotes(userId);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Toutes les notes ont été supprimées.",
-            ),
-          ),
+        ErrorPresenter.showSuccess(
+          context,
+          'Toutes les notes ont été supprimées.',
         );
       }
     }
@@ -58,17 +69,13 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _exportPdf(BuildContext context) async {
     try {
-      final List<Note> notes =
-          await DatabaseHelper.instance.getNotes();
+      final List<Note> notes = await NotesRepository.instance.getNotes(userId);
 
       if (notes.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                "Aucune note à exporter.",
-              ),
-            ),
+          ErrorPresenter.showError(
+            context,
+            AppError.validation('Aucune note à exporter.'),
           );
         }
         return;
@@ -77,12 +84,9 @@ class SettingsScreen extends StatelessWidget {
       await PdfService.exportNotes(notes);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Erreur lors de l'export : $e",
-            ),
-          ),
+        ErrorPresenter.showError(
+          context,
+          AppError.persistence('Erreur lors de l’export PDF.', e),
         );
       }
     }
@@ -97,9 +101,7 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text("Déconnexion"),
-        content: const Text(
-          "Voulez-vous vraiment vous déconnecter ?",
-        ),
+        content: const Text("Voulez-vous vraiment vous déconnecter ?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -114,14 +116,69 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (confirm == true && context.mounted) {
+      await SessionService.instance.logout();
+
+      if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
       );
     }
+  }
+
+  Future<void> _openExternalLink(BuildContext context, Uri url) async {
+    final opened = await launchUrl(url, mode: LaunchMode.externalApplication);
+
+    if (!opened && context.mounted) {
+      ErrorPresenter.showError(
+        context,
+        AppError.unexpected('Impossible d’ouvrir le lien.'),
+      );
+    }
+  }
+
+  Future<void> _showAboutDialog(BuildContext context) async {
+    final theme = Theme.of(context);
+
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("À propos"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "NoteFlow",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text("Version 1.0.0"),
+            const SizedBox(height: 8),
+            Text(
+              "© 2026 NoteFlow\nProjet Flutter DCLIC",
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => _openExternalLink(context, _privacyPolicyUrl),
+              child: const Text("Politique de confidentialité"),
+            ),
+            TextButton(
+              onPressed: () => _openExternalLink(context, _termsOfUseUrl),
+              child: const Text("Conditions d’utilisation"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Fermer"),
+          ),
+        ],
+      ),
+    );
   }
 
   // =====================================================
@@ -136,19 +193,11 @@ class SettingsScreen extends StatelessWidget {
   }) {
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.symmetric(
-        horizontal: 15,
-        vertical: 8,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: color ?? Colors.blue,
-        ),
+        leading: Icon(icon, color: color ?? Colors.blue),
         title: Text(title),
-        trailing: const Icon(
-          Icons.chevron_right,
-        ),
+        trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );
@@ -156,16 +205,12 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider =
-        Provider.of<ThemeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
-      backgroundColor:
-          Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-      appBar: AppBar(
-        title: const Text("Paramètres"),
-      ),
+      appBar: AppBar(title: const Text("Paramètres")),
 
       body: ListView(
         children: [
@@ -174,22 +219,13 @@ class SettingsScreen extends StatelessWidget {
           // ==========================================
           // MODE SOMBRE
           // ==========================================
-
           Card(
             elevation: 2,
-            margin: const EdgeInsets.symmetric(
-              horizontal: 15,
-              vertical: 8,
-            ),
+            margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
             child: SwitchListTile(
-              secondary: const Icon(
-                Icons.dark_mode,
-                color: Colors.indigo,
-              ),
+              secondary: const Icon(Icons.dark_mode, color: Colors.indigo),
               title: const Text("Mode sombre"),
-              subtitle: const Text(
-                "Activer le thème sombre",
-              ),
+              subtitle: const Text("Activer le thème sombre"),
               value: themeProvider.isDark,
               onChanged: (value) {
                 themeProvider.toggleTheme(value);
@@ -200,16 +236,13 @@ class SettingsScreen extends StatelessWidget {
           // ==========================================
           // NOTES ÉPINGLÉES
           // ==========================================
-
           buildTile(
             icon: Icons.person,
             title: "Mon profil",
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
             },
           ),
@@ -221,8 +254,7 @@ class SettingsScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      const PinnedNotesScreen(),
+                  builder: (_) => PinnedNotesScreen(userId: userId),
                 ),
               );
             },
@@ -231,7 +263,6 @@ class SettingsScreen extends StatelessWidget {
           // ==========================================
           // EXPORT PDF
           // ==========================================
-
           buildTile(
             icon: Icons.picture_as_pdf,
             title: "Exporter les notes (PDF)",
@@ -241,7 +272,6 @@ class SettingsScreen extends StatelessWidget {
           // ==========================================
           // SUPPRIMER TOUTES LES NOTES
           // ==========================================
-
           buildTile(
             icon: Icons.delete_forever,
             color: Colors.red,
@@ -252,7 +282,6 @@ class SettingsScreen extends StatelessWidget {
           // ==========================================
           // DÉCONNEXION
           // ==========================================
-
           buildTile(
             icon: Icons.logout,
             color: Colors.orange,
@@ -263,39 +292,30 @@ class SettingsScreen extends StatelessWidget {
           // ==========================================
           // À PROPOS
           // ==========================================
-
           buildTile(
             icon: Icons.info_outline,
             title: "À propos",
-            onTap: () {
-              showAboutDialog(
-                context: context,
-                applicationName: "NoteFlow",
-                applicationVersion: "1.0.0",
-                applicationLegalese:
-                    "© 2026 NoteFlow\nProjet Flutter DCLIC",
-              );
-            },
+            onTap: () => _showAboutDialog(context),
           ),
 
           const SizedBox(height: 40),
 
-          const Center(
+          Center(
             child: Text(
               "Version 1.0.0",
               style: TextStyle(
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
 
           const SizedBox(height: 8),
 
-          const Center(
+          Center(
             child: Text(
               "Développé avec Flutter",
               style: TextStyle(
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),

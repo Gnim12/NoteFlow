@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
 import 'edit_note_screen.dart';
-import '../database/database_helper.dart';
 import '../models/note.dart';
 import '../widgets/header_home.dart';
 import '../widgets/note_card.dart';
 import '../widgets/search_box.dart';
 import '../models/user.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/notes_repository.dart';
 import '../services/session_service.dart';
 import 'add_note_screen.dart';
 import 'package:diacritic/diacritic.dart';
 import '../widgets/dashboard_card.dart';
-import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final User user;
 
-  const HomeScreen({
-    super.key,
-    required this.user,
-  });
+  const HomeScreen({super.key, required this.user});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -35,35 +32,33 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
   User? currentUser;
 
-  final TextEditingController searchController =
-      TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   @override
-    void initState() {
-      super.initState();
-      initialize();
-    }
+  void initState() {
+    super.initState();
+    initialize();
+  }
 
-    Future<void> initialize() async {
-      await loadCurrentUser();
-      await loadNotes();
-    }
+  Future<void> initialize() async {
+    await loadCurrentUser();
+    await loadNotes();
+  }
 
-   Future<void> loadCurrentUser() async {
+  Future<void> loadCurrentUser() async {
     final id = await SessionService.instance.getUserId();
 
     if (id == null) return;
 
-    final user =
-        await DatabaseHelper.instance.getUserById(id);
+    final user = await AuthRepository.instance.getUserById(id);
 
     if (user == null) return;
 
     currentUser = user;
-  } 
+  }
 
   Future<void> loadNotes() async {
-    final result = await DatabaseHelper.instance.getNotes();
+    final result = await NotesRepository.instance.getNotes(widget.user.id!);
     result.sort((a, b) {
       if (a.isPinned == b.isPinned) {
         return b.createdAt.compareTo(a.createdAt);
@@ -72,30 +67,27 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     setState(() {
-    notes = result;
-    filteredNotes = result;
+      notes = result;
+      filteredNotes = result;
 
-    totalNotes = result.length;
+      totalNotes = result.length;
 
-    totalFavorites = result
-        .where((e) => e.isFavorite)
-        .length;
+      totalFavorites = result.where((e) => e.isFavorite).length;
 
-    todayNotes = result.where((note) {
-      final now = DateTime.now();
+      todayNotes = result.where((note) {
+        final now = DateTime.now();
 
-      return note.createdAt.year == now.year &&
-          note.createdAt.month == now.month &&
-          note.createdAt.day == now.day;
-    }).length;
+        return note.createdAt.year == now.year &&
+            note.createdAt.month == now.month &&
+            note.createdAt.day == now.day;
+      }).length;
 
-    isLoading = false;
-  });
+      isLoading = false;
+    });
   }
+
   void searchNotes(String query) {
-    final search = removeDiacritics(
-      query.toLowerCase().trim(),
-    );
+    final search = removeDiacritics(query.toLowerCase().trim());
 
     if (search.isEmpty) {
       setState(() {
@@ -105,61 +97,49 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final results = notes.where((note) {
-      final title = removeDiacritics(
-        note.title.toLowerCase(),
-      );
+      final title = removeDiacritics(note.title.toLowerCase());
 
-      final description = removeDiacritics(
-        note.description.toLowerCase(),
-      );
+      final description = removeDiacritics(note.description.toLowerCase());
 
-      return title.contains(search) ||
-          description.contains(search);
+      return title.contains(search) || description.contains(search);
     }).toList();
 
     setState(() {
       filteredNotes = results;
     });
   }
+
   void sortNotes(String sortType) {
     setState(() {
       selectedSort = sortType;
 
       switch (sortType) {
         case "recent":
-          filteredNotes.sort(
-            (a, b) => b.createdAt.compareTo(a.createdAt),
-          );
+          filteredNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
           break;
 
         case "old":
-          filteredNotes.sort(
-            (a, b) => a.createdAt.compareTo(b.createdAt),
-          );
+          filteredNotes.sort((a, b) => a.createdAt.compareTo(b.createdAt));
           break;
 
         case "title":
-          filteredNotes.sort(
-            (a, b) => a.title.compareTo(b.title),
-          );
+          filteredNotes.sort((a, b) => a.title.compareTo(b.title));
           break;
 
         case "favorite":
           filteredNotes.sort(
-            (a, b) => b.isFavorite
-                .toString()
-                .compareTo(a.isFavorite.toString()),
+            (a, b) =>
+                b.isFavorite.toString().compareTo(a.isFavorite.toString()),
           );
           break;
 
         case "color":
-          filteredNotes.sort(
-            (a, b) => a.color.compareTo(b.color),
-          );
+          filteredNotes.sort((a, b) => a.color.compareTo(b.color));
           break;
       }
     });
   }
+
   void showAllNotes() {
     setState(() {
       filteredNotes = List.from(notes);
@@ -168,8 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void showFavorites() {
     setState(() {
-      filteredNotes =
-          notes.where((e) => e.isFavorite).toList();
+      filteredNotes = notes.where((e) => e.isFavorite).toList();
     });
   }
 
@@ -188,24 +167,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> openAddNoteScreen() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const AddNoteScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => AddNoteScreen(userId: widget.user.id!)),
     );
 
     if (result == true) {
       loadNotes();
     }
   }
+
   Future<void> deleteNote(Note note) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
         title: const Text("Supprimer"),
-        content: const Text(
-          "Voulez-vous vraiment supprimer cette note ?",
-        ),
+        content: const Text("Voulez-vous vraiment supprimer cette note ?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -220,28 +196,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirm == true) {
-      await DatabaseHelper.instance.deleteNote(note.id!);
+      await NotesRepository.instance.deleteNote(
+        id: note.id!,
+        userId: note.userId,
+      );
       loadNotes();
     }
   }
 
   Future<void> toggleFavorite(Note note) async {
-    final updated = note.copyWith(
-      isFavorite: !note.isFavorite,
-    );
+    final updated = note.copyWith(isFavorite: !note.isFavorite);
 
-    await DatabaseHelper.instance.updateNote(updated);
+    await NotesRepository.instance.updateNote(updated);
 
     loadNotes();
   }
+
   Future<void> togglePin(Note note) async {
+    final updated = note.copyWith(isPinned: !note.isPinned);
 
-    final updated = note.copyWith(
-      isPinned: !note.isPinned,
-    );
-
-    await DatabaseHelper.instance
-        .updateNote(updated);
+    await NotesRepository.instance.updateNote(updated);
 
     loadNotes();
   }
@@ -254,149 +228,144 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Theme.of(context).colorScheme.primary,
         onPressed: openAddNoteScreen,
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-        ),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
 
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: loadNotes,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-
-            child: Column(
-              children: [
-
-                HeaderHome(
-                  user: currentUser ?? widget.user,
-                ),
-
-                const SizedBox(height: 20),
-
-                  Row(
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(20),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-
-                      DashboardCard(
-                        icon: Icons.note_alt_rounded,
-                        title: "Notes",
-                        value: totalNotes.toString(),
-                        color: const Color(0xFF3B82F6), // Bleu
-                        onTap: showAllNotes,
+                      HeaderHome(user: currentUser ?? widget.user),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          DashboardCard(
+                            icon: Icons.note_alt_rounded,
+                            title: "Notes",
+                            value: totalNotes.toString(),
+                            color: const Color(0xFF3B82F6),
+                            onTap: showAllNotes,
+                          ),
+                          DashboardCard(
+                            icon: Icons.star_rounded,
+                            title: "Favoris",
+                            value: totalFavorites.toString(),
+                            color: const Color(0xFFF4B400),
+                            onTap: showFavorites,
+                          ),
+                          DashboardCard(
+                            icon: Icons.calendar_today_rounded,
+                            title: "Aujourd'hui",
+                            value: todayNotes.toString(),
+                            color: const Color(0xFF34A853),
+                            onTap: showTodayNotes,
+                          ),
+                        ],
                       ),
-
-                      DashboardCard(
-                        icon: Icons.star_rounded,
-                        title: "Favoris",
-                        value: totalFavorites.toString(),
-                        color: const Color(0xFFF4B400), // Jaune doré
-                        onTap: showFavorites,
-                      ),
-
-                      DashboardCard(
-                        icon: Icons.calendar_today_rounded,
-                        title: "Aujourd'hui",
-                        value: todayNotes.toString(),
-                        color: const Color(0xFF34A853), // Vert
-                        onTap: showTodayNotes,
+                      const SizedBox(height: 25),
+                      SearchBox(
+                        controller: searchController,
+                        onChanged: searchNotes,
+                        onSortSelected: sortNotes,
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 25),
-
-                SearchBox(
-                  controller: searchController,
-                  onChanged: searchNotes,
-                  onSortSelected: sortNotes,
                 ),
-
-                const SizedBox(height: 25),
-
-                Expanded(
-                  child: isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : filteredNotes.isEmpty
-                          ? const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.search_off,
-                                    size: 90,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(height: 20),
-                                  Text(
-                                    "Aucune note trouvée",
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    "Essayez un autre mot-clé.",
-                                  ),
-                                ],
+              ),
+              if (isLoading)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (filteredNotes.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 90,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          "Aucune note trouvée",
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Essayez un autre mot-clé.",
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: NoteCard(
+                          note: filteredNotes[index],
+                          onTap: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditNoteScreen(note: filteredNotes[index]),
                               ),
-                            )
-                          : ListView.builder(
-                              itemCount: filteredNotes.length,
-                              itemBuilder: (context, index) {
-                                return NoteCard(
-                                  note: filteredNotes[index],
+                            );
 
-                                  onTap: () async {
-                                    final result = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => EditNoteScreen(
-                                          note: filteredNotes[index],
-                                        ),
-                                      ),
-                                    );
+                            if (result == true) {
+                              loadNotes();
+                            }
+                          },
+                          onEdit: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditNoteScreen(note: filteredNotes[index]),
+                              ),
+                            );
 
-                                    if (result == true) {
-                                      loadNotes();
-                                    }
-                                  },
-
-                                  onEdit: () async {
-                                    final result = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => EditNoteScreen(
-                                          note: filteredNotes[index],
-                                        ),
-                                      ),
-                                    );
-
-                                    if (result == true) {
-                                      loadNotes();
-                                    }
-                                  },
-
-                                  onDelete: () {
-                                    deleteNote(filteredNotes[index]);
-                                  },
-
-                                  onFavorite: () {
-                                    toggleFavorite(filteredNotes[index]);
-                                  },
-
-                                  onPin: () {
-                                    togglePin(filteredNotes[index]);
-                                  },
-                                );
-                              },
-                            ),
+                            if (result == true) {
+                              loadNotes();
+                            }
+                          },
+                          onDelete: () {
+                            deleteNote(filteredNotes[index]);
+                          },
+                          onFavorite: () {
+                            toggleFavorite(filteredNotes[index]);
+                          },
+                          onPin: () {
+                            togglePin(filteredNotes[index]);
+                          },
+                        ),
+                      );
+                    }, childCount: filteredNotes.length),
+                  ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),

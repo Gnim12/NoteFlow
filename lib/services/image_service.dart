@@ -23,9 +23,9 @@ class ImageService {
 
     final fileName = basename(image.path);
 
-    final savedImage = await File(image.path).copy(
-      "${directory.path}/$fileName",
-    );
+    final savedImage = await File(
+      image.path,
+    ).copy("${directory.path}/$fileName");
 
     return savedImage.path;
   }
@@ -42,9 +42,9 @@ class ImageService {
 
     final fileName = basename(image.path);
 
-    final savedImage = await File(image.path).copy(
-      "${directory.path}/$fileName",
-    );
+    final savedImage = await File(
+      image.path,
+    ).copy("${directory.path}/$fileName");
 
     return savedImage.path;
   }

@@ -5,10 +5,7 @@ import 'background_painter.dart';
 class LoginBackground extends StatelessWidget {
   final Widget child;
 
-  const LoginBackground({
-    super.key,
-    required this.child,
-  });
+  const LoginBackground({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -43,10 +40,7 @@ class LoginBackground extends StatelessWidget {
             ),
           ),
 
-          CustomPaint(
-            size: Size.infinite,
-            painter: BackgroundPainter(),
-          ),
+          CustomPaint(size: Size.infinite, painter: BackgroundPainter()),
 
           _buildCircle(
             top: -120,
@@ -83,21 +77,11 @@ class LoginBackground extends StatelessWidget {
             opacity: isDark ? .08 : .15,
           ),
 
-          Positioned(
-            top: 110,
-            left: 25,
-            child: DotPattern(isDark: isDark),
-          ),
+          Positioned(top: 110, left: 25, child: DotPattern(isDark: isDark)),
 
-          Positioned(
-            top: 330,
-            right: 25,
-            child: DotPattern(isDark: isDark),
-          ),
+          Positioned(top: 330, right: 25, child: DotPattern(isDark: isDark)),
 
-          SafeArea(
-            child: child,
-          ),
+          SafeArea(child: child),
         ],
       ),
     );
@@ -121,7 +105,7 @@ class LoginBackground extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withOpacity(opacity),
+          color: Colors.white.withValues(alpha: opacity),
         ),
       ),
     );
@@ -131,10 +115,7 @@ class LoginBackground extends StatelessWidget {
 class DotPattern extends StatelessWidget {
   final bool isDark;
 
-  const DotPattern({
-    super.key,
-    required this.isDark,
-  });
+  const DotPattern({super.key, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -149,9 +130,7 @@ class DotPattern extends StatelessWidget {
             width: 4,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(
-                isDark ? .18 : .45,
-              ),
+              color: Colors.white.withValues(alpha: isDark ? .18 : .45),
               shape: BoxShape.circle,
             ),
           ),

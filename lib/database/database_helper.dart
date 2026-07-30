@@ -20,14 +20,11 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    final path = join(
-      await getDatabasesPath(),
-      "noteflow.db",
-    );
+    final path = join(await getDatabasesPath(), "noteflow.db");
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 5,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -37,13 +34,11 @@ class DatabaseHelper {
   // CREATE DATABASE
   // =====================================
 
-  Future<void> _createDatabase(
-    Database db,
-    int version,
-  ) async {
+  Future<void> _createDatabase(Database db, int version) async {
     await db.execute('''
       CREATE TABLE notes(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
         title TEXT NOT NULL,
         description TEXT NOT NULL,
         created_at TEXT NOT NULL,
@@ -53,13 +48,19 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute(
+      'CREATE INDEX idx_notes_user_created ON notes(user_id, created_at DESC)',
+    );
+
     await db.execute('''
       CREATE TABLE users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        photo TEXT
+        photo TEXT,
+        reset_code TEXT,
+        reset_code_expires_at TEXT
       )
     ''');
   }
@@ -68,11 +69,7 @@ class DatabaseHelper {
   // DATABASE UPGRADE
   // =====================================
 
-  Future<void> _onUpgrade(
-    Database db,
-    int oldVersion,
-    int newVersion,
-  ) async {
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('''
         CREATE TABLE users(
@@ -85,8 +82,22 @@ class DatabaseHelper {
     }
 
     if (oldVersion < 3) {
+      await db.execute("ALTER TABLE users ADD COLUMN photo TEXT");
+    }
+
+    if (oldVersion < 4) {
+      await db.execute("ALTER TABLE users ADD COLUMN reset_code TEXT");
       await db.execute(
-        "ALTER TABLE users ADD COLUMN photo TEXT",
+        "ALTER TABLE users ADD COLUMN reset_code_expires_at TEXT",
+      );
+    }
+
+    if (oldVersion < 5) {
+      // Les anciennes notes ne pouvaient pas être attribuées de façon fiable.
+      // Elles restent dans la base mais ne sont exposées à aucun compte.
+      await db.execute('ALTER TABLE notes ADD COLUMN user_id INTEGER');
+      await db.execute(
+        'CREATE INDEX idx_notes_user_created ON notes(user_id, created_at DESC)',
       );
     }
   }
@@ -105,17 +116,17 @@ class DatabaseHelper {
     );
   }
 
-  Future<List<Note>> getNotes() async {
+  Future<List<Note>> getNotes(int userId) async {
     final db = await database;
 
     final result = await db.query(
       "notes",
+      where: 'user_id = ?',
+      whereArgs: [userId],
       orderBy: "created_at DESC",
     );
 
-    return result
-        .map((e) => Note.fromMap(e))
-        .toList();
+    return result.map((e) => Note.fromMap(e)).toList();
   }
 
   Future<int> updateNote(Note note) async {
@@ -124,25 +135,25 @@ class DatabaseHelper {
     return await db.update(
       "notes",
       note.toMap(),
-      where: "id = ?",
-      whereArgs: [note.id],
+      where: "id = ? AND user_id = ?",
+      whereArgs: [note.id, note.userId],
     );
   }
 
-  Future<int> deleteNote(int id) async {
+  Future<int> deleteNote({required int id, required int userId}) async {
     final db = await database;
 
     return await db.delete(
       "notes",
-      where: "id = ?",
-      whereArgs: [id],
+      where: "id = ? AND user_id = ?",
+      whereArgs: [id, userId],
     );
   }
 
-  Future<int> deleteAllNotes() async {
+  Future<int> deleteAllNotes(int userId) async {
     final db = await database;
 
-    return await db.delete("notes");
+    return await db.delete("notes", where: 'user_id = ?', whereArgs: [userId]);
   }
 
   // =====================================
@@ -171,10 +182,7 @@ class DatabaseHelper {
     return result.isNotEmpty;
   }
 
-  Future<User?> authenticateUser(
-    String email,
-    String password,
-  ) async {
+  Future<User?> authenticateUser(String email, String password) async {
     final db = await database;
 
     final result = await db.query(
@@ -193,23 +201,30 @@ class DatabaseHelper {
   Future<List<User>> getUsers() async {
     final db = await database;
 
-    final result = await db.query(
-      "users",
-      orderBy: "name ASC",
-    );
+    final result = await db.query("users", orderBy: "name ASC");
 
-    return result
-        .map((e) => User.fromMap(e))
-        .toList();
+    return result.map((e) => User.fromMap(e)).toList();
   }
 
   Future<User?> getUserById(int id) async {
     final db = await database;
 
+    final result = await db.query("users", where: "id = ?", whereArgs: [id]);
+
+    if (result.isEmpty) {
+      return null;
+    }
+
+    return User.fromMap(result.first);
+  }
+
+  Future<User?> getUserByEmail(String email) async {
+    final db = await database;
+
     final result = await db.query(
       "users",
-      where: "id = ?",
-      whereArgs: [id],
+      where: "email = ?",
+      whereArgs: [email],
     );
 
     if (result.isEmpty) {
@@ -217,6 +232,42 @@ class DatabaseHelper {
     }
 
     return User.fromMap(result.first);
+  }
+
+  Future<int> updateResetCode({
+    required int userId,
+    required String? resetCode,
+    required DateTime? expiresAt,
+  }) async {
+    final db = await database;
+
+    return await db.update(
+      "users",
+      {
+        "reset_code": resetCode,
+        "reset_code_expires_at": expiresAt?.toIso8601String(),
+      },
+      where: "id = ?",
+      whereArgs: [userId],
+    );
+  }
+
+  Future<int> updatePassword({
+    required int userId,
+    required String newPassword,
+  }) async {
+    final db = await database;
+
+    return await db.update(
+      "users",
+      {
+        "password": newPassword,
+        "reset_code": null,
+        "reset_code_expires_at": null,
+      },
+      where: "id = ?",
+      whereArgs: [userId],
+    );
   }
 
   Future<int> updateUser(User user) async {
@@ -233,10 +284,6 @@ class DatabaseHelper {
   Future<int> deleteUser(int id) async {
     final db = await database;
 
-    return await db.delete(
-      "users",
-      where: "id = ?",
-      whereArgs: [id],
-    );
+    return await db.delete("users", where: "id = ?", whereArgs: [id]);
   }
 }

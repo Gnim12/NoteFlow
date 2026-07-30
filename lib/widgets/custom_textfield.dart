@@ -46,14 +46,9 @@ class CustomTextField extends StatelessWidget {
         decoration: InputDecoration(
           hintText: hintText,
 
-          hintStyle: TextStyle(
-            color: theme.hintColor,
-          ),
+          hintStyle: TextStyle(color: theme.hintColor),
 
-          prefixIcon: Icon(
-            prefixIcon,
-            color: AppColors.primary,
-          ),
+          prefixIcon: Icon(prefixIcon, color: AppColors.primary),
 
           suffixIcon: suffixIcon,
 
@@ -67,32 +62,22 @@ class CustomTextField extends StatelessWidget {
 
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(
-              color: theme.dividerColor,
-            ),
+            borderSide: BorderSide(color: theme.dividerColor),
           ),
 
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(
-              color: AppColors.primary,
-              width: 2,
-            ),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
 
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(
-              color: theme.colorScheme.error,
-            ),
+            borderSide: BorderSide(color: theme.colorScheme.error),
           ),
 
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(
-              color: theme.colorScheme.error,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
           ),
         ),
       ),

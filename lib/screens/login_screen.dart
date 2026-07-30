@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../models/user.dart';
+import '../core/errors/app_error.dart';
+import '../core/errors/error_presenter.dart';
 import '../services/auth_service.dart';
 import '../services/session_service.dart';
 import '../utils/app_colors.dart';
@@ -9,6 +10,7 @@ import '../widgets/gradient_button.dart';
 import '../widgets/login_background.dart';
 import '../widgets/login_card.dart';
 import '../widgets/login_logo.dart';
+import 'forgot_password_screen.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
 
@@ -40,20 +42,12 @@ class _LoginScreenState extends State<LoginScreen>
       duration: const Duration(milliseconds: 900),
     );
 
-    _fade = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(_controller);
+    _fade = Tween<double>(begin: 0, end: 1).animate(_controller);
 
     _slide = Tween<Offset>(
       begin: const Offset(0, .10),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
   }
@@ -69,12 +63,9 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> login() async {
     if (emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Veuillez remplir tous les champs.",
-          ),
-        ),
+      ErrorPresenter.showError(
+        context,
+        AppError.validation('Veuillez remplir tous les champs.'),
       );
       return;
     }
@@ -83,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen>
       isLoading = true;
     });
 
-    final User? user = await AuthService.instance.login(
+    final result = await AuthService.instance.login(
       email: emailController.text,
       password: passwordController.text,
     );
@@ -94,24 +85,17 @@ class _LoginScreenState extends State<LoginScreen>
       isLoading = false;
     });
 
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            "Email ou mot de passe incorrect.",
-          ),
-        ),
-      );
+    if (result.isFailure) {
+      ErrorPresenter.showError(context, result.error!);
       return;
     }
+
+    final user = result.value!;
 
     // ===========================
     // Sauvegarder la session
     // ===========================
-    await SessionService.instance.saveUserId(
-      user.id!,
-    );
+    await SessionService.instance.saveUserId(user.id!);
 
     // ===========================
     // Aller à l'accueil
@@ -120,11 +104,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => HomeScreen(
-          user: user,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => HomeScreen(user: user)),
     );
   }
 
@@ -133,10 +113,7 @@ class _LoginScreenState extends State<LoginScreen>
     return LoginBackground(
       child: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 28,
-            vertical: 10,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
           child: FadeTransition(
             opacity: _fade,
             child: SlideTransition(
@@ -153,10 +130,8 @@ class _LoginScreenState extends State<LoginScreen>
                         CustomTextField(
                           controller: emailController,
                           hintText: "Adresse email",
-                          keyboardType:
-                              TextInputType.emailAddress,
-                          prefixIcon:
-                              Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: Icons.email_outlined,
                         ),
 
                         const SizedBox(height: 20),
@@ -164,54 +139,57 @@ class _LoginScreenState extends State<LoginScreen>
                         CustomTextField(
                           controller: passwordController,
                           hintText: "Mot de passe",
-                          prefixIcon:
-                              Icons.lock_outline,
-                          obscureText:
-                              obscurePassword,
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: obscurePassword,
                           suffixIcon: IconButton(
                             onPressed: () {
                               setState(() {
-                                obscurePassword =
-                                    !obscurePassword;
+                                obscurePassword = !obscurePassword;
                               });
                             },
                             icon: Icon(
                               obscurePassword
-                                  ? Icons
-                                      .visibility_off_rounded
-                                  : Icons
-                                      .visibility_rounded,
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
                               color: AppColors.primary,
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 12),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ForgotPasswordScreen(),
+                                ),
+                              );
+                            },
+                            child: const Text("Mot de passe oublié ?"),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
 
                         GradientButton(
-                          text: isLoading
-                              ? "Connexion..."
-                              : "Se connecter",
+                          text: isLoading ? "Connexion..." : "Se connecter",
                           icon: Icons.login_rounded,
-                          onPressed: isLoading
-                              ? null
-                              : login,
+                          onPressed: isLoading ? null : login,
                         ),
 
                         const SizedBox(height: 20),
 
                         Wrap(
-                          alignment:
-                              WrapAlignment.center,
-                          crossAxisAlignment:
-                              WrapCrossAlignment
-                                  .center,
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               "Pas encore de compte ?",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium,
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
 
                             TextButton(
@@ -219,14 +197,11 @@ class _LoginScreenState extends State<LoginScreen>
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        const RegisterScreen(),
+                                    builder: (_) => const RegisterScreen(),
                                   ),
                                 );
                               },
-                              child: const Text(
-                                "Créer un compte",
-                              ),
+                              child: const Text("Créer un compte"),
                             ),
                           ],
                         ),

@@ -29,32 +29,27 @@ class DashboardCard extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(26),
             onTap: onTap,
-            splashColor: color.withOpacity(.12),
+            splashColor: color.withValues(alpha: .12),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOut,
 
-              padding: const EdgeInsets.symmetric(
-                vertical: 14,
-                horizontal: 10,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
 
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(26),
 
                 color: isDark
                     ? const Color(0xff1F1F1F)
-                    : color.withOpacity(.08),
+                    : color.withValues(alpha: .08),
 
-                border: Border.all(
-                  color: color.withOpacity(.18),
-                ),
+                border: Border.all(color: color.withValues(alpha: .18)),
 
                 boxShadow: [
                   BoxShadow(
                     color: isDark
                         ? Colors.black26
-                        : color.withOpacity(.15),
+                        : color.withValues(alpha: .15),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -63,20 +58,15 @@ class DashboardCard extends StatelessWidget {
 
               child: Column(
                 children: [
-
                   /// Icône
                   Container(
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: color.withOpacity(.15),
+                      color: color.withValues(alpha: .15),
                     ),
-                    child: Icon(
-                      icon,
-                      color: color,
-                      size: 24,
-                    ),
+                    child: Icon(icon, color: color, size: 24),
                   ),
 
                   const SizedBox(height: 10),
@@ -114,8 +104,7 @@ class DashboardCard extends StatelessWidget {
                           height: 5,
                           decoration: BoxDecoration(
                             color: color,
-                            borderRadius:
-                                BorderRadius.circular(50),
+                            borderRadius: BorderRadius.circular(50),
                           ),
                         ),
                       ),

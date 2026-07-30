@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../core/errors/error_presenter.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/custom_textfield.dart';
 import '../widgets/gradient_button.dart';
-import '../database/database_helper.dart';
 import '../models/user.dart';
+import '../repositories/auth_repository.dart';
+import '../services/auth_service.dart';
 import '../services/session_service.dart';
 import '../services/image_service.dart';
 
@@ -12,21 +14,15 @@ class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() =>
-      _ProfileScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState
-    extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _nameController = TextEditingController();
 
-  final _nameController =
-      TextEditingController();
+  final _emailController = TextEditingController();
 
-  final _emailController =
-      TextEditingController();
-
-  final _passwordController =
-      TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _hidePassword = true;
   User? currentUser;
@@ -40,6 +36,7 @@ class _ProfileScreenState
     super.initState();
     loadUser();
   }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -49,8 +46,7 @@ class _ProfileScreenState
   }
 
   Future<void> loadUser() async {
-    final id =
-        await SessionService.instance.getUserId();
+    final id = await SessionService.instance.getUserId();
 
     if (id == null) {
       setState(() {
@@ -59,8 +55,7 @@ class _ProfileScreenState
       return;
     }
 
-    final user =
-        await DatabaseHelper.instance.getUserById(id);
+    final user = await AuthRepository.instance.getUserById(id);
 
     if (user == null) {
       setState(() {
@@ -83,28 +78,25 @@ class _ProfileScreenState
   Future<void> saveProfile() async {
     if (currentUser == null) return;
 
-    final updatedUser = currentUser!.copyWith(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim().isEmpty
-          ? currentUser!.password
-          : _passwordController.text.trim(),
+    final result = await AuthService.instance.updateProfile(
+      user: currentUser!,
+      name: _nameController.text,
+      email: _emailController.text,
+      newPassword: _passwordController.text.trim(),
       photo: imagePath,
     );
 
-    await DatabaseHelper.instance.updateUser(updatedUser);
-
-    currentUser = updatedUser;
-
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          "Profil mis à jour avec succès.",
-        ),
-      ),
-    );
+    if (result.isFailure) {
+      ErrorPresenter.showError(context, result.error!);
+      return;
+    }
+
+    currentUser = result.value!;
+    _passwordController.clear();
+
+    ErrorPresenter.showSuccess(context, 'Profil mis à jour avec succès.');
   }
 
   Future<void> _changePhoto() async {
@@ -113,9 +105,7 @@ class _ProfileScreenState
     final choice = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (_) {
         return SafeArea(
@@ -125,24 +115,19 @@ class _ProfileScreenState
                 title: Center(
                   child: Text(
                     "Changer la photo",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text("Galerie"),
-                onTap: () =>
-                    Navigator.pop(context, "gallery"),
+                onTap: () => Navigator.pop(context, "gallery"),
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt),
                 title: const Text("Caméra"),
-                onTap: () =>
-                    Navigator.pop(context, "camera"),
+                onTap: () => Navigator.pop(context, "camera"),
               ),
               ListTile(
                 leading: const Icon(Icons.close),
@@ -158,24 +143,18 @@ class _ProfileScreenState
     String? path;
 
     if (choice == "gallery") {
-      path = await ImageService.instance
-          .pickImageFromGallery();
+      path = await ImageService.instance.pickImageFromGallery();
     }
 
     if (choice == "camera") {
-      path = await ImageService.instance
-          .pickImageFromCamera();
+      path = await ImageService.instance.pickImageFromCamera();
     }
 
     if (path == null) return;
 
-    final updatedUser = currentUser!.copyWith(
-      photo: path,
-    );
+    final updatedUser = currentUser!.copyWith(photo: path);
 
-    await DatabaseHelper.instance.updateUser(
-      updatedUser,
-    );
+    await AuthRepository.instance.updateUser(updatedUser);
 
     setState(() {
       currentUser = updatedUser;
@@ -184,30 +163,17 @@ class _ProfileScreenState
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          "Photo de profil mise à jour.",
-        ),
-      ),
-    );
+    ErrorPresenter.showSuccess(context, 'Photo de profil mise à jour.');
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Mon profil"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Mon profil"), centerTitle: true),
 
       body: SafeArea(
         child: SingleChildScrollView(
@@ -215,79 +181,56 @@ class _ProfileScreenState
 
           child: Column(
             children: [
-
               const SizedBox(height: 10),
 
-              ProfileAvatar(
-                imagePath: imagePath,
-                onTap: _changePhoto,
-              ),
+              ProfileAvatar(imagePath: imagePath, onTap: _changePhoto),
 
               const SizedBox(height: 35),
 
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20),
                 ),
 
                 child: Padding(
-                  padding:
-                      const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
 
                   child: Column(
                     children: [
-
                       CustomTextField(
-                        controller:
-                            _nameController,
-                        hintText:
-                            "Nom complet",
-                        prefixIcon:
-                            Icons.person,
+                        controller: _nameController,
+                        hintText: "Nom complet",
+                        prefixIcon: Icons.person,
                       ),
 
                       const SizedBox(height: 20),
 
                       CustomTextField(
-                        controller:
-                            _emailController,
-                        hintText:
-                            "Adresse email",
-                        prefixIcon:
-                            Icons.email,
-                        keyboardType:
-                            TextInputType
-                                .emailAddress,
+                        controller: _emailController,
+                        hintText: "Adresse email",
+                        prefixIcon: Icons.email,
+                        keyboardType: TextInputType.emailAddress,
                       ),
 
                       const SizedBox(height: 20),
 
                       CustomTextField(
-                        controller:
-                            _passwordController,
-                        hintText:
-                            "Nouveau mot de passe",
-                        prefixIcon:
-                            Icons.lock,
-                        obscureText:
-                            _hidePassword,
+                        controller: _passwordController,
+                        hintText: "Nouveau mot de passe",
+                        prefixIcon: Icons.lock,
+                        obscureText: _hidePassword,
 
-                        suffixIcon:
-                            IconButton(
+                        suffixIcon: IconButton(
                           onPressed: () {
                             setState(() {
-                              _hidePassword =
-                                  !_hidePassword;
+                              _hidePassword = !_hidePassword;
                             });
                           },
                           icon: Icon(
                             _hidePassword
-                                ? Icons
-                                    .visibility_off
-                                : Icons
-                                    .visibility,
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
                         ),
                       ),
@@ -295,10 +238,8 @@ class _ProfileScreenState
                       const SizedBox(height: 30),
 
                       GradientButton(
-                        text:
-                            "Enregistrer",
-                        icon:
-                            Icons.save,
+                        text: "Enregistrer",
+                        icon: Icons.save,
                         onPressed: saveProfile,
                       ),
                     ],

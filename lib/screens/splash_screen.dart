@@ -1,18 +1,19 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 
 import '../widgets/loading_dots.dart';
 import '../widgets/splash_background.dart';
+import '../repositories/auth_repository.dart';
+import '../services/session_service.dart';
+import 'home_screen.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() =>
-      _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
@@ -44,59 +45,60 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeIn,
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: .75,
-      end: 1,
-    ).animate(
-      CurvedAnimation(
-        parent: _logoController,
-        curve: Curves.elasticOut,
-      ),
+    _scaleAnimation = Tween<double>(begin: .75, end: 1).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
     );
 
     _rotationAnimation = Tween<double>(
       begin: -.05,
       end: 0,
-    ).animate(
-      CurvedAnimation(
-        parent: _logoController,
-        curve: Curves.easeOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _logoController, curve: Curves.easeOut));
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, .45),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _textController,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, .45), end: Offset.zero).animate(
+          CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
+        );
 
     _logoController.forward();
 
-    Future.delayed(
-      const Duration(milliseconds: 500),
-      () {
-        _textController.forward();
-      },
-    );
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      _textController.forward();
+    });
 
-    Timer(
-      const Duration(seconds: 3),
-      () {
-        if (!mounted) return;
+    _redirectAfterSplash();
+  }
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const LoginScreen(),
-          ),
-        );
-      },
-    );
+  Future<void> _redirectAfterSplash() async {
+    await Future<void>.delayed(const Duration(seconds: 3));
+
+    try {
+      final userId = await SessionService.instance.getUserId();
+      final user = userId == null
+          ? null
+          : await AuthRepository.instance.getUserById(userId);
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              user == null ? const LoginScreen() : HomeScreen(user: user),
+        ),
+      );
+    } catch (_) {
+      // Une session obsolète ou une migration SQLite incomplète ne doit jamais
+      // empêcher l'ouverture de l'application.
+      await SessionService.instance.logout();
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    }
   }
 
   @override
@@ -112,31 +114,21 @@ class _SplashScreenState extends State<SplashScreen>
       body: SplashBackground(
         child: Center(
           child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-
               /// Halo lumineux
               Stack(
                 alignment: Alignment.center,
                 children: [
-
                   AnimatedBuilder(
                     animation: _logoController,
-                    builder: (_, __) {
+                    builder: (context, _) {
                       return Container(
-                        width:
-                            180 +
-                                (_logoController.value *
-                                    30),
-                        height:
-                            180 +
-                                (_logoController.value *
-                                    30),
+                        width: 180 + (_logoController.value * 30),
+                        height: 180 + (_logoController.value * 30),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white
-                              .withOpacity(.08),
+                          color: Colors.white.withValues(alpha: .08),
                         ),
                       );
                     },
@@ -147,40 +139,26 @@ class _SplashScreenState extends State<SplashScreen>
                     child: ScaleTransition(
                       scale: _scaleAnimation,
                       child: AnimatedBuilder(
-                        animation:
-                            _rotationAnimation,
-                        builder: (_, child) {
+                        animation: _rotationAnimation,
+                        builder: (context, child) {
                           return Transform.rotate(
-                            angle:
-                                _rotationAnimation
-                                    .value *
-                                pi,
+                            angle: _rotationAnimation.value * pi,
                             child: child,
                           );
                         },
                         child: Container(
                           width: 125,
                           height: 125,
-                          decoration:
-                              BoxDecoration(
-                            color: Colors.white
-                                .withOpacity(.14),
-                            shape:
-                                BoxShape.circle,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .14),
+                            shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white
-                                  .withOpacity(
-                                      .20),
+                              color: Colors.white.withValues(alpha: .20),
                             ),
                           ),
                           child: Padding(
-                            padding:
-                                const EdgeInsets.all(
-                              24,
-                            ),
-                            child: Image.asset(
-                              "assets/icons/logo.png",
-                            ),
+                            padding: const EdgeInsets.all(24),
+                            child: Image.asset("assets/icons/logo.png"),
                           ),
                         ),
                       ),
@@ -198,8 +176,7 @@ class _SplashScreenState extends State<SplashScreen>
                   style: TextStyle(
                     fontSize: 34,
                     color: Colors.white,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                     letterSpacing: 1,
                   ),
                 ),
@@ -215,8 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                   style: TextStyle(
                     fontSize: 15,
                     height: 1.5,
-                    color: Colors.white
-                        .withOpacity(.92),
+                    color: Colors.white.withValues(alpha: .92),
                   ),
                 ),
               ),
@@ -231,14 +207,12 @@ class _SplashScreenState extends State<SplashScreen>
 
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding:
-              const EdgeInsets.only(bottom: 18),
+          padding: const EdgeInsets.only(bottom: 18),
           child: Text(
             "Version 1.0.0",
             textAlign: TextAlign.center,
             style: TextStyle(
-              color:
-                  Colors.white.withOpacity(.75),
+              color: Colors.white.withValues(alpha: .75),
               fontSize: 12,
             ),
           ),

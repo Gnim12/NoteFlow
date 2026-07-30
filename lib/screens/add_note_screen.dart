@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../database/database_helper.dart';
+import '../core/errors/app_error.dart';
+import '../core/errors/error_presenter.dart';
 import '../models/note.dart';
+import '../repositories/notes_repository.dart';
 import '../utils/app_colors.dart';
 import '../widgets/note_form.dart';
 
 class AddNoteScreen extends StatefulWidget {
-  const AddNoteScreen({super.key});
+  final int userId;
+
+  const AddNoteScreen({super.key, required this.userId});
 
   @override
   State<AddNoteScreen> createState() => _AddNoteScreenState();
@@ -14,8 +18,7 @@ class AddNoteScreen extends StatefulWidget {
 
 class _AddNoteScreenState extends State<AddNoteScreen> {
   final TextEditingController titleController = TextEditingController();
-  final TextEditingController descriptionController =
-      TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
   bool isFavorite = false;
 
@@ -35,19 +38,17 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     final description = descriptionController.text.trim();
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Veuillez saisir un titre."),
-        ),
+      ErrorPresenter.showError(
+        context,
+        AppError.validation('Veuillez saisir un titre.'),
       );
       return;
     }
 
     if (description.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Veuillez saisir une description."),
-        ),
+      ErrorPresenter.showError(
+        context,
+        AppError.validation('Veuillez saisir une description.'),
       );
       return;
     }
@@ -57,6 +58,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     });
 
     final note = Note(
+      userId: widget.userId,
       title: title,
       description: description,
       createdAt: DateTime.now(),
@@ -64,7 +66,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       isFavorite: isFavorite,
     );
 
-    await DatabaseHelper.instance.insertNote(note);
+    await NotesRepository.instance.insertNote(note);
 
     if (!mounted) return;
 
@@ -74,7 +76,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       appBar: AppBar(
         elevation: 0,
@@ -127,11 +129,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                   )
                 : const Icon(Icons.save),
 
-            label: Text(
-              isSaving
-                  ? "Enregistrement..."
-                  : "Enregistrer",
-            ),
+            label: Text(isSaving ? "Enregistrement..." : "Enregistrer"),
           ),
         ),
       ),

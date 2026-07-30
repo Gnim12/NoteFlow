@@ -22,23 +22,17 @@ class NoteForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = [
-      0xFF2563EB,
-      0xFF10B981,
-      0xFFF59E0B,
-      0xFFEF4444,
-      0xFF8B5CF6,
-    ];
+    final theme = Theme.of(context);
+    final colors = [0xFF2563EB, 0xFF10B981, 0xFFF59E0B, 0xFFEF4444, 0xFF8B5CF6];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
-        const Text(
+        Text(
           "Titre",
-          style: TextStyle(
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            color: theme.colorScheme.onSurface,
           ),
         ),
 
@@ -46,23 +40,23 @@ class NoteForm extends StatelessWidget {
 
         TextField(
           controller: titleController,
+          style: TextStyle(color: theme.colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: "Titre de la note",
+            hintStyle: TextStyle(color: theme.hintColor),
             filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
+            fillColor: theme.cardColor,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
           ),
         ),
 
         const SizedBox(height: 20),
 
-        const Text(
+        Text(
           "Description",
-          style: TextStyle(
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            color: theme.colorScheme.onSurface,
           ),
         ),
 
@@ -71,23 +65,23 @@ class NoteForm extends StatelessWidget {
         TextField(
           controller: descriptionController,
           maxLines: 6,
+          style: TextStyle(color: theme.colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: "Écrivez votre note...",
+            hintStyle: TextStyle(color: theme.hintColor),
             filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
+            fillColor: theme.cardColor,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
           ),
         ),
 
         const SizedBox(height: 25),
 
-        const Text(
+        Text(
           "Couleur",
-          style: TextStyle(
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            color: theme.colorScheme.onSurface,
           ),
         ),
 
@@ -108,9 +102,7 @@ class NoteForm extends StatelessWidget {
                   color: Color(color),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: selected
-                        ? Colors.black
-                        : Colors.transparent,
+                    color: selected ? Colors.black : Colors.transparent,
                     width: 3,
                   ),
                 ),
@@ -124,8 +116,11 @@ class NoteForm extends StatelessWidget {
         SwitchListTile(
           value: isFavorite,
           onChanged: onFavoriteChanged,
-          activeColor: AppColors.primary,
-          title: const Text("Ajouter aux favoris ⭐"),
+          activeThumbColor: AppColors.primary,
+          title: Text(
+            "Ajouter aux favoris ⭐",
+            style: TextStyle(color: theme.colorScheme.onSurface),
+          ),
           contentPadding: EdgeInsets.zero,
         ),
       ],

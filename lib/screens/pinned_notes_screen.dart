@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 
-import '../database/database_helper.dart';
 import '../models/note.dart';
+import '../repositories/notes_repository.dart';
 import '../widgets/note_card.dart';
 
 class PinnedNotesScreen extends StatefulWidget {
-  const PinnedNotesScreen({super.key});
+  final int userId;
+
+  const PinnedNotesScreen({super.key, required this.userId});
 
   @override
-  State<PinnedNotesScreen> createState() =>
-      _PinnedNotesScreenState();
+  State<PinnedNotesScreen> createState() => _PinnedNotesScreenState();
 }
 
-class _PinnedNotesScreenState
-    extends State<PinnedNotesScreen> {
-
+class _PinnedNotesScreenState extends State<PinnedNotesScreen> {
   List<Note> pinnedNotes = [];
 
   bool isLoading = true;
@@ -26,13 +25,10 @@ class _PinnedNotesScreenState
   }
 
   Future<void> loadPinnedNotes() async {
-    final notes =
-        await DatabaseHelper.instance.getNotes();
+    final notes = await NotesRepository.instance.getNotes(widget.userId);
 
     setState(() {
-      pinnedNotes = notes
-          .where((note) => note.isPinned)
-          .toList();
+      pinnedNotes = notes.where((note) => note.isPinned).toList();
 
       isLoading = false;
     });
@@ -40,31 +36,29 @@ class _PinnedNotesScreenState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Notes épinglées"),
-      ),
+      appBar: AppBar(title: const Text("Notes épinglées")),
 
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : pinnedNotes.isEmpty
-              ? const Center(
-                  child: Text(
-                    "Aucune note épinglée.",
-                    style: TextStyle(fontSize: 18),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(15),
-                  itemCount: pinnedNotes.length,
-                  itemBuilder: (_, index) {
-                    return NoteCard(
-                      note: pinnedNotes[index],
-                    );
-                  },
+          ? Center(
+              child: Text(
+                "Aucune note épinglée.",
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(15),
+              itemCount: pinnedNotes.length,
+              itemBuilder: (_, index) {
+                return NoteCard(note: pinnedNotes[index]);
+              },
+            ),
     );
   }
 }

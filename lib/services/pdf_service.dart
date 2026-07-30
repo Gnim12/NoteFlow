@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -16,11 +13,9 @@ class PdfService {
 
     final now = DateTime.now();
 
-    final totalFavorites =
-        notes.where((e) => e.isFavorite).length;
+    final totalFavorites = notes.where((e) => e.isFavorite).length;
 
-    final totalPinned =
-        notes.where((e) => e.isPinned).length;
+    final totalPinned = notes.where((e) => e.isPinned).length;
 
     pdf.addPage(
       pw.MultiPage(
@@ -33,20 +28,15 @@ class PdfService {
             alignment: pw.Alignment.centerRight,
             child: pw.Text(
               "Page ${context.pageNumber}",
-              style: const pw.TextStyle(
-                fontSize: 10,
-                color: PdfColors.grey,
-              ),
+              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
             ),
           );
         },
 
         build: (context) => [
-
           /// =========================
           /// HEADER
           /// =========================
-
           pw.Container(
             padding: const pw.EdgeInsets.all(20),
 
@@ -56,11 +46,9 @@ class PdfService {
             ),
 
             child: pw.Column(
-              crossAxisAlignment:
-                  pw.CrossAxisAlignment.start,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
 
               children: [
-
                 pw.Text(
                   "NOTEFLOW",
                   style: pw.TextStyle(
@@ -87,9 +75,7 @@ class PdfService {
 
           pw.Text(
             "Date d'export : ${DateFormat("dd/MM/yyyy HH:mm").format(now)}",
-            style: const pw.TextStyle(
-              fontSize: 12,
-            ),
+            style: const pw.TextStyle(fontSize: 12),
           ),
 
           pw.SizedBox(height: 20),
@@ -97,41 +83,23 @@ class PdfService {
           /// =========================
           /// STATISTIQUES
           /// =========================
-
           pw.Table(
-            border: pw.TableBorder.all(
-              color: PdfColors.grey300,
-            ),
+            border: pw.TableBorder.all(color: PdfColors.grey300),
             children: [
-
               pw.TableRow(
-                decoration: const pw.BoxDecoration(
-                  color: PdfColors.blue50,
-                ),
+                decoration: const pw.BoxDecoration(color: PdfColors.blue50),
                 children: [
-
                   _cell("Nombre de notes"),
                   _cell(notes.length.toString()),
-
                 ],
               ),
 
               pw.TableRow(
-                children: [
-
-                  _cell("Favoris"),
-                  _cell(totalFavorites.toString()),
-
-                ],
+                children: [_cell("Favoris"), _cell(totalFavorites.toString())],
               ),
 
               pw.TableRow(
-                children: [
-
-                  _cell("Epinglées"),
-                  _cell(totalPinned.toString()),
-
-                ],
+                children: [_cell("Epinglées"), _cell(totalPinned.toString())],
               ),
             ],
           ),
@@ -140,48 +108,32 @@ class PdfService {
 
           pw.Text(
             "Liste des notes",
-            style: pw.TextStyle(
-              fontSize: 18,
-              fontWeight: pw.FontWeight.bold,
-            ),
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
           ),
 
           pw.SizedBox(height: 10),
 
           ...notes.map((note) {
-
             return pw.Container(
-
-              margin: const pw.EdgeInsets.only(
-                bottom: 16,
-              ),
+              margin: const pw.EdgeInsets.only(bottom: 16),
 
               padding: const pw.EdgeInsets.all(14),
 
               decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey300),
 
-                border: pw.Border.all(
-                  color: PdfColors.grey300,
-                ),
-
-                borderRadius:
-                    pw.BorderRadius.circular(8),
-
+                borderRadius: pw.BorderRadius.circular(8),
               ),
 
               child: pw.Column(
-
-                crossAxisAlignment:
-                    pw.CrossAxisAlignment.start,
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
 
                 children: [
-
                   pw.Text(
                     note.title,
                     style: pw.TextStyle(
                       fontSize: 18,
-                      fontWeight:
-                          pw.FontWeight.bold,
+                      fontWeight: pw.FontWeight.bold,
                     ),
                   ),
 
@@ -189,65 +141,34 @@ class PdfService {
 
                   pw.Text(
                     note.description,
-                    style: const pw.TextStyle(
-                      fontSize: 13,
-                    ),
+                    style: const pw.TextStyle(fontSize: 13),
                   ),
 
                   pw.Divider(),
 
                   pw.Table(
-                    columnWidths: {
-                      0: const pw.FixedColumnWidth(80),
-                    },
+                    columnWidths: {0: const pw.FixedColumnWidth(80)},
 
                     children: [
-
                       _row(
                         "Créée",
-                        DateFormat(
-                          "dd MMM yyyy  HH:mm",
-                        ).format(note.createdAt),
+                        DateFormat("dd MMM yyyy  HH:mm").format(note.createdAt),
                       ),
 
-                      _row(
-                        "Favori",
-                        note.isFavorite
-                            ? "Oui"
-                            : "Non",
-                      ),
+                      _row("Favori", note.isFavorite ? "Oui" : "Non"),
 
-                      _row(
-                        "Epinglée",
-                        note.isPinned
-                            ? "Oui"
-                            : "Non",
-                      ),
+                      _row("Epinglée", note.isPinned ? "Oui" : "Non"),
                     ],
                   ),
                 ],
               ),
             );
-
-          }).toList(),
+          }),
         ],
       ),
     );
 
-    final directory =
-        await getTemporaryDirectory();
-
-    final file = File(
-      "${directory.path}/noteflow_notes.pdf",
-    );
-
-    await file.writeAsBytes(
-      await pdf.save(),
-    );
-
-    await Printing.layoutPdf(
-      onLayout: (_) async => pdf.save(),
-    );
+    await Printing.layoutPdf(onLayout: (_) async => pdf.save());
   }
 
   static pw.Widget _cell(String text) {
@@ -257,27 +178,18 @@ class PdfService {
     );
   }
 
-  static pw.TableRow _row(
-    String label,
-    String value,
-  ) {
+  static pw.TableRow _row(String label, String value) {
     return pw.TableRow(
       children: [
-
         pw.Padding(
           padding: const pw.EdgeInsets.all(4),
           child: pw.Text(
             label,
-            style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-            ),
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
         ),
 
-        pw.Padding(
-          padding: const pw.EdgeInsets.all(4),
-          child: pw.Text(value),
-        ),
+        pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(value)),
       ],
     );
   }

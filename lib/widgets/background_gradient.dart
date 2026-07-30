@@ -17,13 +17,7 @@ class BackgroundGradient extends StatelessWidget {
             Color(0xFFBFDBFE),
             Color(0xFFFFFFFF),
           ],
-          stops: [
-            0.0,
-            0.25,
-            0.55,
-            0.82,
-            1.0,
-          ],
+          stops: [0.0, 0.25, 0.55, 0.82, 1.0],
         ),
       ),
     );

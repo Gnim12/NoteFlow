@@ -6,11 +6,7 @@ class ProfileAvatar extends StatelessWidget {
   final String? imagePath;
   final VoidCallback? onTap;
 
-  const ProfileAvatar({
-    super.key,
-    this.imagePath,
-    this.onTap,
-  });
+  const ProfileAvatar({super.key, this.imagePath, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -26,14 +22,11 @@ class ProfileAvatar extends StatelessWidget {
             height: 130,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: theme.colorScheme.primary.withOpacity(.10),
-              border: Border.all(
-                color: theme.colorScheme.primary,
-                width: 3,
-              ),
+              color: theme.colorScheme.primary.withValues(alpha: .10),
+              border: Border.all(color: theme.colorScheme.primary, width: 3),
               boxShadow: [
                 BoxShadow(
-                  color: theme.colorScheme.primary.withOpacity(.20),
+                  color: theme.colorScheme.primary.withValues(alpha: .20),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),
@@ -41,10 +34,7 @@ class ProfileAvatar extends StatelessWidget {
             ),
             child: ClipOval(
               child: imagePath != null && imagePath!.isNotEmpty
-                  ? Image.file(
-                      File(imagePath!),
-                      fit: BoxFit.cover,
-                    )
+                  ? Image.file(File(imagePath!), fit: BoxFit.cover)
                   : Icon(
                       Icons.person,
                       size: 70,

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../database/database_helper.dart';
+import '../core/errors/app_error.dart';
+import '../core/errors/error_presenter.dart';
 import '../models/note.dart';
+import '../repositories/notes_repository.dart';
 import '../utils/app_colors.dart';
 import '../widgets/note_form.dart';
 
 class EditNoteScreen extends StatefulWidget {
   final Note note;
 
-  const EditNoteScreen({
-    super.key,
-    required this.note,
-  });
+  const EditNoteScreen({super.key, required this.note});
 
   @override
   State<EditNoteScreen> createState() => _EditNoteScreenState();
@@ -30,11 +29,9 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
   void initState() {
     super.initState();
 
-    titleController =
-        TextEditingController(text: widget.note.title);
+    titleController = TextEditingController(text: widget.note.title);
 
-    descriptionController =
-        TextEditingController(
+    descriptionController = TextEditingController(
       text: widget.note.description,
     );
 
@@ -51,16 +48,12 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
 
   Future<void> updateNote() async {
     final title = titleController.text.trim();
-    final description =
-        descriptionController.text.trim();
+    final description = descriptionController.text.trim();
 
     if (title.isEmpty || description.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Veuillez remplir tous les champs.",
-          ),
-        ),
+      ErrorPresenter.showError(
+        context,
+        AppError.validation('Veuillez remplir tous les champs.'),
       );
       return;
     }
@@ -76,8 +69,7 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
       isFavorite: isFavorite,
     );
 
-    await DatabaseHelper.instance
-        .updateNote(updatedNote);
+    await NotesRepository.instance.updateNote(updatedNote);
 
     if (!mounted) return;
 
@@ -87,15 +79,13 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
-        title: const Text(
-          "Modifier la note",
-        ),
+        title: const Text("Modifier la note"),
       ),
 
       body: SingleChildScrollView(
@@ -103,8 +93,7 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
 
         child: NoteForm(
           titleController: titleController,
-          descriptionController:
-              descriptionController,
+          descriptionController: descriptionController,
           isFavorite: isFavorite,
           selectedColor: selectedColor,
           onFavoriteChanged: (value) {
@@ -127,33 +116,25 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
           height: 55,
 
           child: ElevatedButton.icon(
-            onPressed:
-                isSaving ? null : updateNote,
+            onPressed: isSaving ? null : updateNote,
 
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  AppColors.primary,
-              foregroundColor:
-                  Colors.white,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
             ),
 
             icon: isSaving
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child:
-                        CircularProgressIndicator(
+                    child: CircularProgressIndicator(
                       color: Colors.white,
                       strokeWidth: 2,
                     ),
                   )
                 : const Icon(Icons.save),
 
-            label: Text(
-              isSaving
-                  ? "Modification..."
-                  : "Enregistrer",
-            ),
+            label: Text(isSaving ? "Modification..." : "Enregistrer"),
           ),
         ),
       ),

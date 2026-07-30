@@ -97,7 +97,7 @@ Flutter compile automatiquement le projet puis installe l'application sur l'appa
 
 # Générer une version Release
 
-Pour générer un APK optimisé :
+Pour générer un APK optimisé localement :
 
 ```bash
 flutter build apk --release
@@ -108,6 +108,48 @@ L'APK est généré dans :
 ```
 build/app/outputs/flutter-apk/app-release.apk
 ```
+
+Pour publier sur le Play Store, préfère un Android App Bundle :
+
+```bash
+flutter build appbundle --release
+```
+
+Le fichier sera généré dans :
+
+```text
+build/app/outputs/bundle/release/app-release.aab
+```
+
+## Signature de release
+
+Avant de compiler la version Play Store, crée un fichier `android/key.properties` à partir de `android/key.properties.example` et renseigne les champs suivants :
+
+- `storePassword` : mot de passe du keystore
+- `keyPassword` : mot de passe de la clé
+- `keyAlias` : alias de la clé
+- `storeFile` : chemin absolu vers le fichier `.jks`
+
+Exemple Windows :
+
+```properties
+storePassword=monMotDePasseStore
+keyPassword=monMotDePasseCle
+keyAlias=upload
+storeFile=C:\Users\brice\keystores\noteflow-upload.jks
+```
+
+Si le fichier `android/key.properties` est absent, Gradle utilise encore la signature debug pour ne pas bloquer le développement local. Pour la publication, il faut absolument fournir un vrai keystore.
+
+## Créer le keystore
+
+Tu peux le générer avec la commande Java `keytool` :
+
+```bash
+keytool -genkeypair -v -keystore noteflow-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Place ensuite le `.jks` dans un dossier sûr, hors du projet si possible, puis référence son chemin dans `android/key.properties`.
 
 ---
 

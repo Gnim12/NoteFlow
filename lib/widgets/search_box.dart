@@ -36,42 +36,19 @@ class SearchBox extends StatelessWidget {
         style: theme.textTheme.bodyMedium,
         decoration: InputDecoration(
           hintText: "Rechercher une note...",
-          hintStyle: TextStyle(
-            color: theme.hintColor,
-          ),
+          hintStyle: TextStyle(color: theme.hintColor),
 
-          prefixIcon: Icon(
-            Icons.search,
-            color: theme.iconTheme.color,
-          ),
+          prefixIcon: Icon(Icons.search, color: theme.iconTheme.color),
 
           suffixIcon: PopupMenuButton<String>(
-            icon: Icon(
-              Icons.sort,
-              color: theme.iconTheme.color,
-            ),
+            icon: Icon(Icons.sort, color: theme.iconTheme.color),
             onSelected: onSortSelected,
             itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: "recent",
-                child: Text("📅 Plus récentes"),
-              ),
-              PopupMenuItem(
-                value: "old",
-                child: Text("📅 Plus anciennes"),
-              ),
-              PopupMenuItem(
-                value: "title",
-                child: Text("🔤 Titre (A → Z)"),
-              ),
-              PopupMenuItem(
-                value: "favorite",
-                child: Text("⭐ Favoris"),
-              ),
-              PopupMenuItem(
-                value: "color",
-                child: Text("🎨 Couleur"),
-              ),
+              PopupMenuItem(value: "recent", child: Text("📅 Plus récentes")),
+              PopupMenuItem(value: "old", child: Text("📅 Plus anciennes")),
+              PopupMenuItem(value: "title", child: Text("🔤 Titre (A → Z)")),
+              PopupMenuItem(value: "favorite", child: Text("⭐ Favoris")),
+              PopupMenuItem(value: "color", child: Text("🎨 Couleur")),
             ],
           ),
 
@@ -90,10 +67,7 @@ class SearchBox extends StatelessWidget {
 
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(
-              color: theme.colorScheme.primary,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
           ),
         ),
       ),

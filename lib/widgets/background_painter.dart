@@ -4,15 +4,15 @@ class BackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint1 = Paint()
-      ..color = Colors.white.withOpacity(.08)
+      ..color = Colors.white.withValues(alpha: .08)
       ..style = PaintingStyle.fill;
 
     final Paint paint2 = Paint()
-      ..color = Colors.white.withOpacity(.14)
+      ..color = Colors.white.withValues(alpha: .14)
       ..style = PaintingStyle.fill;
 
     final Paint paint3 = Paint()
-      ..color = Colors.white.withOpacity(.22)
+      ..color = Colors.white.withValues(alpha: .22)
       ..style = PaintingStyle.fill;
 
     /// ===========================

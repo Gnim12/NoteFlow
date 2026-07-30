@@ -3,16 +3,12 @@ import 'package:flutter/material.dart';
 class SplashBackground extends StatelessWidget {
   final Widget child;
 
-  const SplashBackground({
-    super.key,
-    required this.child,
-  });
+  const SplashBackground({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-
         /// Dégradé principal
         Container(
           decoration: const BoxDecoration(
@@ -38,7 +34,7 @@ class SplashBackground extends StatelessWidget {
             height: 320,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(.08),
+              color: Colors.white.withValues(alpha: .08),
             ),
           ),
         ),
@@ -52,7 +48,7 @@ class SplashBackground extends StatelessWidget {
             height: 220,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(.05),
+              color: Colors.white.withValues(alpha: .05),
             ),
           ),
         ),
@@ -66,7 +62,7 @@ class SplashBackground extends StatelessWidget {
             height: 90,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(.08),
+              color: Colors.white.withValues(alpha: .08),
             ),
           ),
         ),
@@ -80,7 +76,7 @@ class SplashBackground extends StatelessWidget {
             height: 26,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(.30),
+              color: Colors.white.withValues(alpha: .30),
             ),
           ),
         ),
@@ -94,27 +90,17 @@ class SplashBackground extends StatelessWidget {
             height: 18,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(.20),
+              color: Colors.white.withValues(alpha: .20),
             ),
           ),
         ),
 
         /// Petits points
-        Positioned(
-          top: 120,
-          left: 35,
-          child: _DotPattern(),
-        ),
+        Positioned(top: 120, left: 35, child: _DotPattern()),
 
-        Positioned(
-          bottom: 150,
-          right: 25,
-          child: _DotPattern(),
-        ),
+        Positioned(bottom: 150, right: 25, child: _DotPattern()),
 
-        SafeArea(
-          child: child,
-        ),
+        SafeArea(child: child),
       ],
     );
   }
@@ -130,11 +116,11 @@ class _DotPattern extends StatelessWidget {
         runSpacing: 8,
         children: List.generate(
           16,
-          (index) => Container(
+          (_) => Container(
             width: 4,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(.35),
+              color: Colors.white.withValues(alpha: .35),
               shape: BoxShape.circle,
             ),
           ),
