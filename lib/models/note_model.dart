@@ -1,6 +1,6 @@
 class Note {
-  final int? id;
-  final int userId;
+  final String? id;
+  final String userId;
   final String title;
   final String description;
   final DateTime createdAt;
@@ -34,8 +34,8 @@ class Note {
 
   factory Note.fromMap(Map<String, dynamic> map) {
     return Note(
-      id: map['id'],
-      userId: map['user_id'],
+      id: map['id'] as String?,
+      userId: map['user_id'] as String,
       title: map['title'],
       description: map['description'],
       createdAt: DateTime.parse(map['created_at']),
@@ -46,8 +46,8 @@ class Note {
   }
 
   Note copyWith({
-    int? id,
-    int? userId,
+    String? id,
+    String? userId,
     String? title,
     String? description,
     DateTime? createdAt,

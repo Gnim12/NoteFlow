@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../core/errors/error_presenter.dart';
-import '../services/auth_service.dart';
-import '../widgets/gradient_button.dart';
-import '../widgets/custom_textfield.dart';
-import '../widgets/login_background.dart';
-import '../widgets/login_logo.dart';
-import '../widgets/login_card.dart';
+import '../../controllers/auth_controller.dart';
+import '../../core/errors/error_presenter.dart';
+import '../../widgets/gradient_button.dart';
+import '../../widgets/custom_textfield.dart';
+import '../../widgets/login_background.dart';
+import '../../widgets/login_logo.dart';
+import '../../widgets/login_card.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -30,7 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _isLoading = true;
     });
 
-    final result = await AuthService.instance.register(
+    final result = await AuthController.instance.register(
       name: _nameController.text,
       email: _emailController.text,
       password: _passwordController.text,

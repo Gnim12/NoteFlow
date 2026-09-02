@@ -2,7 +2,7 @@ name: noteflow
 description: "Application moderne de prise de notes développée avec Flutter."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.10.4
@@ -44,7 +44,12 @@ dependencies:
 
   image_picker: ^1.2.0
 
-  crypto: ^3.0.7
+  # Génération d'identifiants uniques (préparation Firestore)
+  uuid: ^4.5.1
+
+  # Firebase
+  firebase_core: ^4.14.0
+  firebase_auth: ^6.6.1
 
 dev_dependencies:
   flutter_test:

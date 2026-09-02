@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../core/errors/app_error.dart';
-import '../core/errors/error_presenter.dart';
-import '../models/note.dart';
-import '../repositories/notes_repository.dart';
-import '../utils/app_colors.dart';
-import '../widgets/note_form.dart';
+import '../../controllers/note_controller.dart';
+import '../../core/errors/app_error.dart';
+import '../../core/errors/error_presenter.dart';
+import '../../models/note_model.dart';
+import '../../utils/app_colors.dart';
+import '../../widgets/note_form.dart';
 
 class EditNoteScreen extends StatefulWidget {
   final Note note;
@@ -69,7 +69,7 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
       isFavorite: isFavorite,
     );
 
-    await NotesRepository.instance.updateNote(updatedNote);
+    await NoteController.instance.updateNote(updatedNote);
 
     if (!mounted) return;
 

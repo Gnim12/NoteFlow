@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'edit_note_screen.dart';
-import '../models/note.dart';
-import '../widgets/header_home.dart';
-import '../widgets/note_card.dart';
-import '../widgets/search_box.dart';
-import '../models/user.dart';
-import '../repositories/auth_repository.dart';
-import '../repositories/notes_repository.dart';
-import '../services/session_service.dart';
-import 'add_note_screen.dart';
-import 'package:diacritic/diacritic.dart';
-import '../widgets/dashboard_card.dart';
+
+import '../../controllers/auth_controller.dart';
+import '../../controllers/note_controller.dart';
+import '../../models/note_model.dart';
+import '../../models/user_model.dart';
+import '../../widgets/dashboard_card.dart';
+import '../../widgets/header_home.dart';
+import '../../widgets/note_card.dart';
+import '../../widgets/search_box.dart';
+import '../notes/add_note_screen.dart';
+import '../notes/edit_note_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final User user;
@@ -22,6 +21,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final NoteController _noteController = NoteController.instance;
+
   int totalNotes = 0;
   int totalFavorites = 0;
   int todayNotes = 0;
@@ -46,97 +47,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> loadCurrentUser() async {
-    final id = await SessionService.instance.getUserId();
-
-    if (id == null) return;
-
-    final user = await AuthRepository.instance.getUserById(id);
-
-    if (user == null) return;
-
-    currentUser = user;
+    currentUser = AuthController.instance.currentUser;
   }
 
   Future<void> loadNotes() async {
-    final result = await NotesRepository.instance.getNotes(widget.user.id!);
-    result.sort((a, b) {
-      if (a.isPinned == b.isPinned) {
-        return b.createdAt.compareTo(a.createdAt);
-      }
-      return a.isPinned ? -1 : 1;
-    });
+    final result = await _noteController.getNotes(widget.user.id);
+    final sorted = _noteController.sortPinnedFirst(result);
 
     setState(() {
-      notes = result;
-      filteredNotes = result;
+      notes = sorted;
+      filteredNotes = sorted;
 
-      totalNotes = result.length;
-
-      totalFavorites = result.where((e) => e.isFavorite).length;
-
-      todayNotes = result.where((note) {
-        final now = DateTime.now();
-
-        return note.createdAt.year == now.year &&
-            note.createdAt.month == now.month &&
-            note.createdAt.day == now.day;
-      }).length;
+      totalNotes = sorted.length;
+      totalFavorites = _noteController.favoritesOnly(sorted).length;
+      todayNotes = _noteController.createdToday(sorted).length;
 
       isLoading = false;
     });
   }
 
   void searchNotes(String query) {
-    final search = removeDiacritics(query.toLowerCase().trim());
-
-    if (search.isEmpty) {
-      setState(() {
-        filteredNotes = List.from(notes);
-      });
-      return;
-    }
-
-    final results = notes.where((note) {
-      final title = removeDiacritics(note.title.toLowerCase());
-
-      final description = removeDiacritics(note.description.toLowerCase());
-
-      return title.contains(search) || description.contains(search);
-    }).toList();
-
     setState(() {
-      filteredNotes = results;
+      filteredNotes = _noteController.search(notes, query);
     });
   }
 
   void sortNotes(String sortType) {
     setState(() {
       selectedSort = sortType;
-
-      switch (sortType) {
-        case "recent":
-          filteredNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          break;
-
-        case "old":
-          filteredNotes.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          break;
-
-        case "title":
-          filteredNotes.sort((a, b) => a.title.compareTo(b.title));
-          break;
-
-        case "favorite":
-          filteredNotes.sort(
-            (a, b) =>
-                b.isFavorite.toString().compareTo(a.isFavorite.toString()),
-          );
-          break;
-
-        case "color":
-          filteredNotes.sort((a, b) => a.color.compareTo(b.color));
-          break;
-      }
+      filteredNotes = _noteController.sort(filteredNotes, sortType);
     });
   }
 
@@ -148,26 +87,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void showFavorites() {
     setState(() {
-      filteredNotes = notes.where((e) => e.isFavorite).toList();
+      filteredNotes = _noteController.favoritesOnly(notes);
     });
   }
 
   void showTodayNotes() {
-    final now = DateTime.now();
-
     setState(() {
-      filteredNotes = notes.where((note) {
-        return note.createdAt.year == now.year &&
-            note.createdAt.month == now.month &&
-            note.createdAt.day == now.day;
-      }).toList();
+      filteredNotes = _noteController.createdToday(notes);
     });
   }
 
   Future<void> openAddNoteScreen() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AddNoteScreen(userId: widget.user.id!)),
+      MaterialPageRoute(builder: (_) => AddNoteScreen(userId: widget.user.id)),
     );
 
     if (result == true) {
@@ -196,27 +129,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirm == true) {
-      await NotesRepository.instance.deleteNote(
-        id: note.id!,
-        userId: note.userId,
-      );
+      await _noteController.deleteNote(id: note.id!, userId: note.userId);
       loadNotes();
     }
   }
 
   Future<void> toggleFavorite(Note note) async {
-    final updated = note.copyWith(isFavorite: !note.isFavorite);
-
-    await NotesRepository.instance.updateNote(updated);
-
+    await _noteController.toggleFavorite(note);
     loadNotes();
   }
 
   Future<void> togglePin(Note note) async {
-    final updated = note.copyWith(isPinned: !note.isPinned);
-
-    await NotesRepository.instance.updateNote(updated);
-
+    await _noteController.togglePin(note);
     loadNotes();
   }
 

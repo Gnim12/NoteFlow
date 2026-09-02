@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../core/errors/app_error.dart';
-import '../core/errors/error_presenter.dart';
-import '../services/auth_service.dart';
-import '../services/session_service.dart';
-import '../utils/app_colors.dart';
-import '../widgets/custom_textfield.dart';
-import '../widgets/gradient_button.dart';
-import '../widgets/login_background.dart';
-import '../widgets/login_card.dart';
-import '../widgets/login_logo.dart';
+import '../../controllers/auth_controller.dart';
+import '../../core/errors/app_error.dart';
+import '../../core/errors/error_presenter.dart';
+import '../../utils/app_colors.dart';
+import '../../widgets/custom_textfield.dart';
+import '../../widgets/gradient_button.dart';
+import '../../widgets/login_background.dart';
+import '../../widgets/login_card.dart';
+import '../../widgets/login_logo.dart';
+import '../home/home_screen.dart';
 import 'forgot_password_screen.dart';
-import 'home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -74,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen>
       isLoading = true;
     });
 
-    final result = await AuthService.instance.login(
+    final result = await AuthController.instance.login(
       email: emailController.text,
       password: passwordController.text,
     );
@@ -92,16 +91,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     final user = result.value!;
 
-    // ===========================
-    // Sauvegarder la session
-    // ===========================
-    await SessionService.instance.saveUserId(user.id!);
-
-    // ===========================
-    // Aller à l'accueil
-    // ===========================
-    if (!mounted) return;
-
+    // Firebase Authentication conserve la session automatiquement.
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => HomeScreen(user: user)),

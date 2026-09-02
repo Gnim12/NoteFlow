@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../models/note.dart';
-import '../repositories/notes_repository.dart';
-import '../widgets/note_card.dart';
+import '../../controllers/note_controller.dart';
+import '../../models/note_model.dart';
+import '../../widgets/note_card.dart';
 
 class PinnedNotesScreen extends StatefulWidget {
-  final int userId;
+  final String userId;
 
   const PinnedNotesScreen({super.key, required this.userId});
 
@@ -14,6 +14,8 @@ class PinnedNotesScreen extends StatefulWidget {
 }
 
 class _PinnedNotesScreenState extends State<PinnedNotesScreen> {
+  final NoteController _noteController = NoteController.instance;
+
   List<Note> pinnedNotes = [];
 
   bool isLoading = true;
@@ -25,10 +27,10 @@ class _PinnedNotesScreenState extends State<PinnedNotesScreen> {
   }
 
   Future<void> loadPinnedNotes() async {
-    final notes = await NotesRepository.instance.getNotes(widget.userId);
+    final notes = await _noteController.getNotes(widget.userId);
 
     setState(() {
-      pinnedNotes = notes.where((note) => note.isPinned).toList();
+      pinnedNotes = _noteController.pinnedOnly(notes);
 
       isLoading = false;
     });

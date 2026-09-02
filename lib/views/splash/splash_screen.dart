@@ -2,12 +2,11 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../widgets/loading_dots.dart';
-import '../widgets/splash_background.dart';
-import '../repositories/auth_repository.dart';
-import '../services/session_service.dart';
-import 'home_screen.dart';
-import 'login_screen.dart';
+import '../../controllers/auth_controller.dart';
+import '../../widgets/loading_dots.dart';
+import '../../widgets/splash_background.dart';
+import '../auth/login_screen.dart';
+import '../home/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -73,10 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
     await Future<void>.delayed(const Duration(seconds: 3));
 
     try {
-      final userId = await SessionService.instance.getUserId();
-      final user = userId == null
-          ? null
-          : await AuthRepository.instance.getUserById(userId);
+      final user = AuthController.instance.currentUser;
 
       if (!mounted) return;
 
@@ -88,10 +84,8 @@ class _SplashScreenState extends State<SplashScreen>
         ),
       );
     } catch (_) {
-      // Une session obsolète ou une migration SQLite incomplète ne doit jamais
-      // empêcher l'ouverture de l'application.
-      await SessionService.instance.logout();
-
+      // Une session Firebase invalide ne doit jamais empêcher l'ouverture de
+      // l'application.
       if (!mounted) return;
 
       Navigator.pushReplacement(

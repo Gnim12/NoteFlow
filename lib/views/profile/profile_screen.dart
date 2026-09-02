@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../core/errors/error_presenter.dart';
-import '../widgets/profile_avatar.dart';
-import '../widgets/custom_textfield.dart';
-import '../widgets/gradient_button.dart';
-import '../models/user.dart';
-import '../repositories/auth_repository.dart';
-import '../services/auth_service.dart';
-import '../services/session_service.dart';
-import '../services/image_service.dart';
+import '../../controllers/auth_controller.dart';
+import '../../controllers/profile_controller.dart';
+import '../../core/errors/error_presenter.dart';
+import '../../models/user_model.dart';
+import '../../widgets/custom_textfield.dart';
+import '../../widgets/gradient_button.dart';
+import '../../widgets/profile_avatar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,6 +16,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final ProfileController _controller = ProfileController.instance;
+
   final _nameController = TextEditingController();
 
   final _emailController = TextEditingController();
@@ -46,16 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> loadUser() async {
-    final id = await SessionService.instance.getUserId();
-
-    if (id == null) {
-      setState(() {
-        isLoading = false;
-      });
-      return;
-    }
-
-    final user = await AuthRepository.instance.getUserById(id);
+    final user = await _controller.loadCurrentUser();
 
     if (user == null) {
       setState(() {
@@ -78,12 +69,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> saveProfile() async {
     if (currentUser == null) return;
 
-    final result = await AuthService.instance.updateProfile(
+    final result = await _controller.saveProfile(
       user: currentUser!,
       name: _nameController.text,
       email: _emailController.text,
-      newPassword: _passwordController.text.trim(),
-      photo: imagePath,
     );
 
     if (!mounted) return;
@@ -94,6 +83,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     currentUser = result.value!;
+
+    final newPassword = _passwordController.text.trim();
+    if (newPassword.isNotEmpty) {
+      final passwordResult = await AuthController.instance.changePassword(
+        newPassword,
+      );
+
+      if (!mounted) return;
+
+      if (passwordResult.isFailure) {
+        ErrorPresenter.showError(context, passwordResult.error!);
+        return;
+      }
+    }
+
     _passwordController.clear();
 
     ErrorPresenter.showSuccess(context, 'Profil mis à jour avec succès.');
@@ -140,21 +144,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
 
-    String? path;
+    if (choice == null) return;
 
-    if (choice == "gallery") {
-      path = await ImageService.instance.pickImageFromGallery();
-    }
-
-    if (choice == "camera") {
-      path = await ImageService.instance.pickImageFromCamera();
-    }
+    final path = await _controller.pickPhoto(choice);
 
     if (path == null) return;
 
-    final updatedUser = currentUser!.copyWith(photo: path);
-
-    await AuthRepository.instance.updateUser(updatedUser);
+    final updatedUser = await _controller.updatePhoto(currentUser!, path);
 
     setState(() {
       currentUser = updatedUser;

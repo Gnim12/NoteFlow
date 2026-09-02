@@ -3,7 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import '../models/note.dart';
+import '../models/note_model.dart';
 
 class PdfService {
   PdfService._();

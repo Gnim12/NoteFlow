@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../core/errors/app_error.dart';
-import '../core/errors/error_presenter.dart';
-import '../models/note.dart';
-import '../providers/theme_provider.dart';
-import '../repositories/notes_repository.dart';
-import '../services/pdf_service.dart';
-import '../services/session_service.dart';
-import 'login_screen.dart';
-import 'pinned_notes_screen.dart';
-import 'profile_screen.dart';
+import '../../controllers/auth_controller.dart';
+import '../../controllers/note_controller.dart';
+import '../../core/errors/app_error.dart';
+import '../../core/errors/error_presenter.dart';
+import '../../models/note_model.dart';
+import '../../providers/theme_provider.dart';
+import '../../services/pdf_service.dart';
+import '../auth/login_screen.dart';
+import '../notes/pinned_notes_screen.dart';
+import '../profile/profile_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
-  final int userId;
+  final String userId;
 
   const SettingsScreen({super.key, required this.userId});
 
@@ -52,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (confirm == true) {
-      await NotesRepository.instance.deleteAllNotes(userId);
+      await NoteController.instance.deleteAllNotes(userId);
 
       if (context.mounted) {
         ErrorPresenter.showSuccess(
@@ -69,7 +69,7 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _exportPdf(BuildContext context) async {
     try {
-      final List<Note> notes = await NotesRepository.instance.getNotes(userId);
+      final List<Note> notes = await NoteController.instance.getNotes(userId);
 
       if (notes.isEmpty) {
         if (context.mounted) {
@@ -116,7 +116,7 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (confirm == true && context.mounted) {
-      await SessionService.instance.logout();
+      await AuthController.instance.logout();
 
       if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(

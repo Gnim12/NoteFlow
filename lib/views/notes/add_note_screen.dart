@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../core/errors/app_error.dart';
-import '../core/errors/error_presenter.dart';
-import '../models/note.dart';
-import '../repositories/notes_repository.dart';
-import '../utils/app_colors.dart';
-import '../widgets/note_form.dart';
+import '../../controllers/note_controller.dart';
+import '../../core/errors/app_error.dart';
+import '../../core/errors/error_presenter.dart';
+import '../../models/note_model.dart';
+import '../../utils/app_colors.dart';
+import '../../widgets/note_form.dart';
 
 class AddNoteScreen extends StatefulWidget {
-  final int userId;
+  final String userId;
 
   const AddNoteScreen({super.key, required this.userId});
 
@@ -66,7 +66,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       isFavorite: isFavorite,
     );
 
-    await NotesRepository.instance.insertNote(note);
+    await NoteController.instance.createNote(note);
 
     if (!mounted) return;
 

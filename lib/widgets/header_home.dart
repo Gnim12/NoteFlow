@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../screens/settings_screen.dart';
+import '../views/settings/settings_screen.dart';
 import '../utils/app_colors.dart';
-import '../models/user.dart';
+import '../models/user_model.dart';
 import 'dart:io';
 
 class HeaderHome extends StatelessWidget {
@@ -100,7 +100,7 @@ class HeaderHome extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => SettingsScreen(userId: user.id!),
+                        builder: (_) => SettingsScreen(userId: user.id),
                       ),
                     );
                   },
