@@ -2,26 +2,70 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Accès accordé par le propriétaire d'une note à un autre utilisateur
+    // (cf. shared_notes/{noteId}_{sharedWithUid}).
+    function shareGrant(noteId) {
+      return get(/databases/$(database)/documents/shared_notes/$(noteId + '_' + request.auth.uid)).data;
+    }
+
+    function hasReadShare(noteId) {
+      return exists(/databases/$(database)/documents/shared_notes/$(noteId + '_' + request.auth.uid));
+    }
+
+    function hasWriteShare(noteId) {
+      return hasReadShare(noteId) && shareGrant(noteId).permission == 'write';
+    }
+
+    // ATTENTION : les champs des documents shared_notes sont en snake_case
+    // (cf. SharedNote.toMap() côté Dart) : owner_id, shared_with_uid, note_id.
+
     match /users/{userId} {
       // Un utilisateur ne peut pas lire/écrire le document racine d'un autre
       // utilisateur (aucune donnée n'y est stockée directement pour l'instant).
       allow read, write: if false;
 
       match /notes/{noteId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isSignedIn() && (request.auth.uid == userId || hasReadShare(noteId));
+        allow write: if isSignedIn() && (request.auth.uid == userId || hasWriteShare(noteId));
 
+        // Pièces jointes et rappels restent réservés au propriétaire : un
+        // utilisateur avec qui la note est partagée n'y a pas accès.
         match /attachments/{attachmentId} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
+          allow read, write: if isSignedIn() && request.auth.uid == userId;
         }
 
         match /reminders/{reminderId} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
+          allow read, write: if isSignedIn() && request.auth.uid == userId;
         }
       }
 
       match /categories/{categoryId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
+    }
+
+    // Annuaire minimal permettant de retrouver l'UID d'un utilisateur à
+    // partir de son email, pour partager une note avec lui.
+    match /user_directory/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Un partage est identifié par "{noteId}_{sharedWithUid}". Seul le
+    // propriétaire de la note peut le créer/modifier/supprimer ; le
+    // propriétaire et le destinataire peuvent le lire.
+    match /shared_notes/{shareId} {
+      allow read: if isSignedIn() && (
+        resource.data.owner_id == request.auth.uid ||
+        resource.data.shared_with_uid == request.auth.uid
+      );
+      allow create: if isSignedIn() && request.resource.data.owner_id == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.owner_id == request.auth.uid;
     }
   }
 }

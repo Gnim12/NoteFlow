@@ -15,6 +15,7 @@ import '../notes/pinned_notes_screen.dart';
 import '../notes/trash_screen.dart';
 import '../profile/profile_screen.dart';
 import '../reminders/reminders_screen.dart';
+import '../shared/shared_notes_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final String userId;
@@ -274,6 +275,22 @@ class SettingsScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => CategoriesScreen(userId: userId),
+                ),
+              );
+            },
+          ),
+
+          // ==========================================
+          // NOTES PARTAGÉES
+          // ==========================================
+          buildTile(
+            icon: Icons.people_outline,
+            title: "Notes partagées avec moi",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SharedNotesScreen(userId: userId),
                 ),
               );
             },

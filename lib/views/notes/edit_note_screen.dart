@@ -6,6 +6,7 @@ import '../../controllers/attachment_controller.dart';
 import '../../controllers/category_controller.dart';
 import '../../controllers/note_controller.dart';
 import '../../controllers/reminder_controller.dart';
+import '../../controllers/sharing_controller.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/error_presenter.dart';
 import '../../models/attachment_model.dart';
@@ -13,11 +14,14 @@ import '../../models/category_model.dart';
 import '../../models/location_model.dart';
 import '../../models/note_model.dart';
 import '../../models/reminder_model.dart';
+import '../../models/shared_note_model.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/attachment_list.dart';
 import '../../widgets/note_form.dart';
 import '../../widgets/reminder_tile.dart';
+import '../../widgets/share_tile.dart';
 import '../reminders/reminder_form_dialog.dart';
+import '../shared/share_note_dialog.dart';
 
 class EditNoteScreen extends StatefulWidget {
   final Note note;
@@ -42,12 +46,15 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
   bool isLoadingAttachments = true;
   List<Reminder> reminders = [];
   bool isLoadingReminders = true;
+  List<SharedNote> shares = [];
+  bool isLoadingShares = true;
 
   bool isSaving = false;
 
   final AttachmentController _attachmentController =
       AttachmentController.instance;
   final ReminderController _reminderController = ReminderController.instance;
+  final SharingController _sharingController = SharingController.instance;
 
   @override
   void initState() {
@@ -68,6 +75,44 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
     loadCategories();
     loadAttachments();
     loadReminders();
+    loadShares();
+  }
+
+  Future<void> loadShares() async {
+    final result = await _sharingController.getSharesForNote(widget.note);
+
+    if (!mounted) return;
+
+    setState(() {
+      shares = result;
+      isLoadingShares = false;
+    });
+  }
+
+  Future<void> _shareNote() async {
+    final draft = await showShareNoteDialog(context);
+    if (draft == null) return;
+
+    final result = await _sharingController.shareNote(
+      note: widget.note,
+      email: draft.email,
+      permission: draft.permission,
+    );
+
+    if (!mounted) return;
+
+    if (result.isFailure) {
+      ErrorPresenter.showError(context, result.error!);
+      return;
+    }
+
+    ErrorPresenter.showSuccess(context, "Note partagée avec ${draft.email}.");
+    loadShares();
+  }
+
+  Future<void> _revokeShare(SharedNote share) async {
+    await _sharingController.revokeShare(share.id);
+    loadShares();
   }
 
   Future<void> loadReminders() async {
@@ -454,6 +499,46 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
                     onToggle: (value) => _toggleReminder(reminder, value),
                     onEdit: () => _editReminder(reminder),
                     onDelete: () => _deleteReminder(reminder),
+                  );
+                }).toList(),
+              ),
+
+            const SizedBox(height: 25),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Partage",
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                IconButton(
+                  onPressed: _shareNote,
+                  icon: const Icon(Icons.person_add_alt_1_outlined),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            if (isLoadingShares)
+              const Center(child: CircularProgressIndicator())
+            else if (shares.isEmpty)
+              Text(
+                "Cette note n'est partagée avec personne.",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              )
+            else
+              Column(
+                children: shares.map((share) {
+                  return ShareTile(
+                    share: share,
+                    onRevoke: () => _revokeShare(share),
                   );
                 }).toList(),
               ),

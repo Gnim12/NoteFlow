@@ -106,27 +106,28 @@ class _ReminderFormDialogState extends State<_ReminderFormDialog> {
           const SizedBox(height: 10),
           DropdownButtonFormField<RecurrenceType>(
             initialValue: recurrence,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: "Récurrence"),
             items: const [
               DropdownMenuItem(
                 value: RecurrenceType.none,
-                child: Text("Ponctuel"),
+                child: Text("Ponctuel", overflow: TextOverflow.ellipsis),
               ),
               DropdownMenuItem(
                 value: RecurrenceType.daily,
-                child: Text("Quotidien"),
+                child: Text("Quotidien", overflow: TextOverflow.ellipsis),
               ),
               DropdownMenuItem(
                 value: RecurrenceType.weekly,
-                child: Text("Hebdomadaire"),
+                child: Text("Hebdomadaire", overflow: TextOverflow.ellipsis),
               ),
               DropdownMenuItem(
                 value: RecurrenceType.monthly,
-                child: Text("Mensuel"),
+                child: Text("Mensuel", overflow: TextOverflow.ellipsis),
               ),
               DropdownMenuItem(
                 value: RecurrenceType.custom,
-                child: Text("Personnalisé (tous les N jours)"),
+                child: Text("Personnalisé (N jours)", overflow: TextOverflow.ellipsis),
               ),
             ],
             onChanged: (value) {

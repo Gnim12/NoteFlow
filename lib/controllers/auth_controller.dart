@@ -6,6 +6,7 @@ import '../core/errors/app_error.dart';
 import '../core/errors/result.dart';
 import '../models/user_model.dart';
 import '../services/firebase_auth_service.dart';
+import '../services/sharing_service.dart';
 
 class PasswordResetResult {
   final bool success;
@@ -19,6 +20,15 @@ class AuthController {
 
   static final AuthController instance = AuthController._();
   final FirebaseAuthService _authService = FirebaseAuthService.instance;
+  final SharingService _sharingService = SharingService.instance;
+
+  /// Best-effort : permet à d'autres utilisateurs de retrouver ce compte par
+  /// email pour partager une note avec lui (cf. phase 9).
+  void _syncDirectoryEntry(User user) {
+    _sharingService
+        .upsertDirectoryEntry(uid: user.id, email: user.email, name: user.name)
+        .catchError((_) {});
+  }
 
   User? get currentUser {
     final firebaseUser = _authService.currentUser;
@@ -104,6 +114,10 @@ class AuthController {
 
       await credential.user?.updateDisplayName(name.trim());
 
+      if (credential.user != null) {
+        _syncDirectoryEntry(_mapUser(credential.user!).copyWith(name: name.trim()));
+      }
+
       return Result.success(null);
     } on fb.FirebaseAuthException catch (e) {
       return Result.failure(_mapAuthException(e));
@@ -138,7 +152,10 @@ class AuthController {
         return Result.failure(AppError.auth('Connexion impossible.'));
       }
 
-      return Result.success(_mapUser(firebaseUser));
+      final user = _mapUser(firebaseUser);
+      _syncDirectoryEntry(user);
+
+      return Result.success(user);
     } on fb.FirebaseAuthException catch (e) {
       return Result.failure(_mapAuthException(e));
     } catch (e) {
@@ -158,7 +175,10 @@ class AuthController {
         return Result.failure(AppError.auth('Connexion Google impossible.'));
       }
 
-      return Result.success(_mapUser(firebaseUser));
+      final user = _mapUser(firebaseUser);
+      _syncDirectoryEntry(user);
+
+      return Result.success(user);
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) {
         return Result.failure(AppError.validation('Connexion annulée.'));
@@ -238,9 +258,13 @@ class AuthController {
         await _authService.updateEmail(normalizedEmail);
       }
 
-      return Result.success(
-        user.copyWith(name: normalizedName, email: normalizedEmail),
+      final updated = user.copyWith(
+        name: normalizedName,
+        email: normalizedEmail,
       );
+      _syncDirectoryEntry(updated);
+
+      return Result.success(updated);
     } on fb.FirebaseAuthException catch (e) {
       return Result.failure(_mapAuthException(e));
     } catch (error) {
