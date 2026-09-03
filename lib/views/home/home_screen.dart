@@ -13,7 +13,6 @@ import '../../widgets/header_home.dart';
 import '../../widgets/note_card.dart';
 import '../../widgets/search_box.dart';
 import '../../widgets/sync_status_badge.dart';
-import '../notes/add_note_screen.dart';
 import '../notes/edit_note_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -141,17 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> openAddNoteScreen() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => AddNoteScreen(userId: widget.user.id)),
-    );
-
-    if (result == true) {
-      loadNotes();
-    }
-  }
-
   Future<void> deleteNote(Note note) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -192,12 +180,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        onPressed: openAddNoteScreen,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
 
       body: SafeArea(
         child: RefreshIndicator(

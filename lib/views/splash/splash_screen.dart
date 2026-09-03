@@ -6,7 +6,7 @@ import '../../controllers/auth_controller.dart';
 import '../../widgets/loading_dots.dart';
 import '../../widgets/splash_background.dart';
 import '../auth/login_screen.dart';
-import '../home/home_screen.dart';
+import '../home/main_shell_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -80,7 +80,7 @@ class _SplashScreenState extends State<SplashScreen>
         context,
         MaterialPageRoute(
           builder: (_) =>
-              user == null ? const LoginScreen() : HomeScreen(user: user),
+              user == null ? const LoginScreen() : MainShellScreen(user: user),
         ),
       );
     } catch (_) {

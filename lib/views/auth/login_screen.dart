@@ -9,7 +9,7 @@ import '../../widgets/gradient_button.dart';
 import '../../widgets/login_background.dart';
 import '../../widgets/login_card.dart';
 import '../../widgets/login_logo.dart';
-import '../home/home_screen.dart';
+import '../home/main_shell_screen.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen>
     // Firebase Authentication conserve la session automatiquement.
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => HomeScreen(user: user)),
+      MaterialPageRoute(builder: (_) => MainShellScreen(user: user)),
     );
   }
 
@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => HomeScreen(user: user)),
+      MaterialPageRoute(builder: (_) => MainShellScreen(user: user)),
     );
   }
 
