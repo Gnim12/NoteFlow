@@ -15,11 +15,13 @@ import '../../models/location_model.dart';
 import '../../models/note_model.dart';
 import '../../models/reminder_model.dart';
 import '../../models/shared_note_model.dart';
+import '../../services/geofence_service.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/attachment_list.dart';
 import '../../widgets/note_form.dart';
 import '../../widgets/reminder_tile.dart';
 import '../../widgets/share_tile.dart';
+import '../reminders/location_reminder_form_dialog.dart';
 import '../reminders/reminder_form_dialog.dart';
 import '../shared/share_note_dialog.dart';
 import 'note_history_dialog.dart';
@@ -136,6 +138,38 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
       dateTime: draft.dateTime,
       recurrence: draft.recurrence,
       customIntervalDays: draft.customIntervalDays,
+    );
+
+    loadReminders();
+  }
+
+  Future<void> _addLocationReminder() async {
+    final granted = await GeofenceService.instance.requestPermissions();
+
+    if (!granted) {
+      if (!mounted) return;
+      ErrorPresenter.showError(
+        context,
+        AppError.validation(
+          "Un rappel géolocalisé nécessite l'autorisation de localisation "
+          "\"Tout le temps\". Ouvrez Paramètres > Applications > NoteFlow > "
+          "Autorisations > Localisation, et choisissez \"Autoriser tout le "
+          "temps\", puis réessayez.",
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    final draft = await showLocationReminderFormDialog(context);
+    if (draft == null) return;
+
+    await _reminderController.createLocationReminder(
+      note: widget.note,
+      latitude: draft.latitude,
+      longitude: draft.longitude,
+      radiusMeters: draft.radiusMeters,
+      placeName: draft.placeName,
     );
 
     loadReminders();
@@ -500,9 +534,28 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                IconButton(
-                  onPressed: _addReminder,
+                PopupMenuButton<String>(
                   icon: const Icon(Icons.add_circle_outline),
+                  onSelected: (value) {
+                    if (value == "time") _addReminder();
+                    if (value == "location") _addLocationReminder();
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: "time",
+                      child: ListTile(
+                        leading: Icon(Icons.schedule),
+                        title: Text("Rappel à une date"),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: "location",
+                      child: ListTile(
+                        leading: Icon(Icons.location_on),
+                        title: Text("Rappel géolocalisé"),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

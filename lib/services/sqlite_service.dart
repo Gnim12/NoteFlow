@@ -31,7 +31,7 @@ class SqliteService {
 
     return await openDatabase(
       path,
-      version: 14,
+      version: 15,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -97,9 +97,14 @@ class SqliteService {
         id TEXT PRIMARY KEY,
         note_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
+        trigger_type TEXT NOT NULL DEFAULT 'time',
         date_time TEXT NOT NULL,
         recurrence TEXT NOT NULL,
         custom_interval_days INTEGER,
+        latitude REAL,
+        longitude REAL,
+        radius_meters REAL,
+        place_name TEXT,
         enabled INTEGER NOT NULL,
         notification_id INTEGER NOT NULL,
         created_at TEXT NOT NULL
@@ -296,6 +301,17 @@ class SqliteService {
     if (oldVersion < 14) {
       // Historique des modifications (cf. phase 10).
       await _createNoteVersionsTable(db);
+    }
+
+    if (oldVersion < 15) {
+      // Rappels géolocalisés (cf. phase 11).
+      await db.execute(
+        "ALTER TABLE reminders ADD COLUMN trigger_type TEXT NOT NULL DEFAULT 'time'",
+      );
+      await db.execute('ALTER TABLE reminders ADD COLUMN latitude REAL');
+      await db.execute('ALTER TABLE reminders ADD COLUMN longitude REAL');
+      await db.execute('ALTER TABLE reminders ADD COLUMN radius_meters REAL');
+      await db.execute('ALTER TABLE reminders ADD COLUMN place_name TEXT');
     }
   }
 
@@ -617,6 +633,16 @@ class SqliteService {
     );
 
     return result.map((e) => Reminder.fromMap(e)).toList();
+  }
+
+  Future<Reminder?> getReminderById(String id) async {
+    final db = await database;
+
+    final result = await db.query("reminders", where: "id = ?", whereArgs: [id]);
+
+    if (result.isEmpty) return null;
+
+    return Reminder.fromMap(result.first);
   }
 
   Future<List<Reminder>> getAllReminders(String userId) async {

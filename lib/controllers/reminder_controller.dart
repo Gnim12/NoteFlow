@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../models/note_model.dart';
 import '../models/reminder_model.dart';
 import '../services/firestore_service.dart';
+import '../services/geofence_service.dart';
 import '../services/notification_service.dart';
 import '../services/sqlite_service.dart';
 
@@ -14,6 +15,7 @@ class ReminderController {
   final SqliteService _service = SqliteService.instance;
   final FirestoreService _firestoreService = FirestoreService.instance;
   final NotificationService _notificationService = NotificationService.instance;
+  final GeofenceService _geofenceService = GeofenceService.instance;
 
   static const _uuid = Uuid();
 
@@ -40,6 +42,7 @@ class ReminderController {
       id: _uuid.v4(),
       noteId: note.id!,
       userId: note.userId,
+      triggerType: ReminderTriggerType.time,
       dateTime: dateTime,
       recurrence: recurrence,
       customIntervalDays: customIntervalDays,
@@ -53,11 +56,56 @@ class ReminderController {
     return reminder;
   }
 
+  /// Rappel géolocalisé (cahier des charges §5.9, fonctionnalité avancée) :
+  /// se déclenche à l'approche du lieu plutôt qu'à une date/heure précise.
+  /// L'appelant doit d'abord obtenir les permissions via
+  /// [GeofenceService.requestPermissions].
+  Future<Reminder> createLocationReminder({
+    required Note note,
+    required double latitude,
+    required double longitude,
+    required double radiusMeters,
+    String? placeName,
+  }) async {
+    final reminder = Reminder(
+      id: _uuid.v4(),
+      noteId: note.id!,
+      userId: note.userId,
+      triggerType: ReminderTriggerType.location,
+      dateTime: DateTime.now(),
+      recurrence: RecurrenceType.none,
+      latitude: latitude,
+      longitude: longitude,
+      radiusMeters: radiusMeters,
+      placeName: placeName,
+      notificationId: _generateNotificationId(),
+      createdAt: DateTime.now(),
+    );
+
+    await _service.insertReminder(reminder);
+    await _geofenceService.registerGeofence(reminder);
+    _mirrorToCloud(() => _firestoreService.setReminder(reminder));
+
+    return reminder;
+  }
+
   Future<void> updateReminder({
     required Reminder reminder,
     required Note note,
   }) async {
     await _service.updateReminder(reminder);
+
+    if (reminder.isLocationBased) {
+      await _geofenceService.removeGeofence(reminder);
+
+      if (reminder.enabled) {
+        await _geofenceService.registerGeofence(reminder);
+      }
+
+      _mirrorToCloud(() => _firestoreService.setReminder(reminder));
+      return;
+    }
+
     await _notificationService.cancel(reminder.notificationId);
 
     if (reminder.enabled) {
@@ -68,7 +116,12 @@ class ReminderController {
   }
 
   Future<void> deleteReminder(Reminder reminder) async {
-    await _notificationService.cancel(reminder.notificationId);
+    if (reminder.isLocationBased) {
+      await _geofenceService.removeGeofence(reminder);
+    } else {
+      await _notificationService.cancel(reminder.notificationId);
+    }
+
     await _service.deleteReminder(reminder.id!);
 
     _mirrorToCloud(
@@ -96,14 +149,19 @@ class ReminderController {
     action().catchError((_) {});
   }
 
-  /// Reprogramme tous les rappels actifs de l'utilisateur. Nécessaire au
-  /// démarrage de l'application car Android annule les alarmes programmées
-  /// après un redémarrage de l'appareil. Fait aussi avancer les rappels
-  /// "personnalisés" dont l'échéance est déjà passée.
+  /// Reprogramme les rappels ponctuels/récurrents actifs de l'utilisateur.
+  /// Nécessaire au démarrage de l'application car Android annule les
+  /// alarmes programmées après un redémarrage de l'appareil. Fait aussi
+  /// avancer les rappels "personnalisés" dont l'échéance est déjà passée.
+  ///
+  /// Les rappels géolocalisés ne sont pas concernés : `native_geofence`
+  /// les réenregistre lui-même après un redémarrage.
   Future<void> rescheduleAll(String userId) async {
     final reminders = await _service.getAllReminders(userId);
 
-    for (final reminder in reminders.where((r) => r.enabled)) {
+    for (final reminder in reminders.where(
+      (r) => r.enabled && !r.isLocationBased,
+    )) {
       var current = reminder;
 
       if (current.recurrence == RecurrenceType.custom &&

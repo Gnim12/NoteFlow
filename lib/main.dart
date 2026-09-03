@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/note_controller.dart';
 import 'providers/theme_provider.dart';
+import 'services/geofence_service.dart';
 import 'services/navigation_service.dart';
 import 'services/notification_service.dart';
 import 'utils/app_theme.dart';
@@ -17,6 +18,7 @@ void main() async {
 
   NotificationService.instance.onNotificationTap = _openNoteFromNotification;
   await NotificationService.instance.init();
+  await GeofenceService.instance.init();
   _handleColdStartNotification();
 
   runApp(

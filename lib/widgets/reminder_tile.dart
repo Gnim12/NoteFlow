@@ -19,6 +19,16 @@ class ReminderTile extends StatelessWidget {
     required this.onDelete,
   });
 
+  String get _subtitle {
+    if (reminder.isLocationBased) {
+      final place = reminder.placeName ?? "lieu choisi";
+      final radius = reminder.radiusMeters?.round() ?? 0;
+      return "À l'approche de $place (${radius}m)";
+    }
+
+    return "${DateFormat("dd MMM yyyy 'à' HH:mm").format(reminder.dateTime)} · ${reminder.recurrenceLabel}";
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -27,19 +37,23 @@ class ReminderTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
         leading: Icon(
-          Icons.notifications_active,
+          reminder.isLocationBased
+              ? Icons.location_on
+              : Icons.notifications_active,
           color: reminder.enabled
               ? theme.colorScheme.primary
               : theme.disabledColor,
         ),
         title: Text(
           noteTitle ??
-              DateFormat("dd MMM yyyy 'à' HH:mm").format(reminder.dateTime),
+              (reminder.isLocationBased
+                  ? (reminder.placeName ?? "Rappel géolocalisé")
+                  : DateFormat(
+                      "dd MMM yyyy 'à' HH:mm",
+                    ).format(reminder.dateTime)),
         ),
-        subtitle: Text(
-          "${DateFormat("dd MMM yyyy 'à' HH:mm").format(reminder.dateTime)} · ${reminder.recurrenceLabel}",
-        ),
-        onTap: onEdit,
+        subtitle: Text(_subtitle),
+        onTap: reminder.isLocationBased ? null : onEdit,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
