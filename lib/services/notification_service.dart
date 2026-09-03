@@ -114,6 +114,6 @@ class NotificationService {
   }
 
   Future<void> cancel(int notificationId) {
-    return _plugin.cancel(notificationId);
+    return _plugin.cancel(id: notificationId);
   }
 }
