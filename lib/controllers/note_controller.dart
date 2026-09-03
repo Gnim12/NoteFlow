@@ -2,6 +2,7 @@ import 'package:diacritic/diacritic.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/note_model.dart';
+import '../models/note_version_model.dart';
 import '../services/firestore_service.dart';
 import '../services/sqlite_service.dart';
 import '../services/sync_service.dart';
@@ -32,6 +33,8 @@ class NoteController {
   }
 
   Future<int> updateNote(Note note) async {
+    await _snapshotVersionIfContentChanged(note);
+
     final updated = note.copyWith(updatedAt: DateTime.now());
 
     final rows = await _service.updateNote(updated);
@@ -40,8 +43,41 @@ class NoteController {
     return rows;
   }
 
+  /// Sauvegarde l'état précédent du titre/contenu avant d'appliquer une
+  /// modification, pour permettre de consulter l'historique et restaurer une
+  /// version antérieure (cahier des charges §5.1). Ignore les mises à jour
+  /// qui ne touchent ni le titre ni la description (ex. épingler, changer de
+  /// catégorie) pour ne pas polluer l'historique.
+  Future<void> _snapshotVersionIfContentChanged(Note newState) async {
+    final previous = await _service.getNoteById(newState.id!, newState.userId);
+    if (previous == null) return;
+
+    if (previous.title == newState.title &&
+        previous.description == newState.description) {
+      return;
+    }
+
+    final version = NoteVersion(
+      id: _uuid.v4(),
+      noteId: previous.id!,
+      userId: previous.userId,
+      title: previous.title,
+      description: previous.description,
+      savedAt: DateTime.now(),
+    );
+
+    await _service.insertNoteVersion(version);
+    await _service.trimNoteVersions(previous.id!);
+    _firestoreService.setNoteVersion(version).catchError((_) {});
+  }
+
+  Future<List<NoteVersion>> getVersions(String noteId) {
+    return _service.getNoteVersions(noteId);
+  }
+
   Future<int> deleteNote({required String id, required String userId}) async {
     final rows = await _service.deleteNote(id: id, userId: userId);
+    await _service.deleteNoteVersions(id);
     await _syncService.enqueueDelete(userId: userId, noteId: id);
 
     return rows;

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/attachment_model.dart';
 import '../models/category_model.dart';
 import '../models/note_model.dart';
+import '../models/note_version_model.dart';
 import '../models/reminder_model.dart';
 
 class FirestoreService {
@@ -36,6 +37,13 @@ class FirestoreService {
     String noteId,
   ) {
     return _notesCollection(userId).doc(noteId).collection('reminders');
+  }
+
+  CollectionReference<Map<String, dynamic>> _versionsCollection(
+    String userId,
+    String noteId,
+  ) {
+    return _notesCollection(userId).doc(noteId).collection('versions');
   }
 
   Future<void> setNote(Note note) {
@@ -113,5 +121,11 @@ class FirestoreService {
     required String reminderId,
   }) {
     return _remindersCollection(userId, noteId).doc(reminderId).delete();
+  }
+
+  Future<void> setNoteVersion(NoteVersion version) {
+    return _versionsCollection(version.userId, version.noteId)
+        .doc(version.id)
+        .set(version.toMap());
   }
 }

@@ -22,6 +22,7 @@ import '../../widgets/reminder_tile.dart';
 import '../../widgets/share_tile.dart';
 import '../reminders/reminder_form_dialog.dart';
 import '../shared/share_note_dialog.dart';
+import 'note_history_dialog.dart';
 
 class EditNoteScreen extends StatefulWidget {
   final Note note;
@@ -336,6 +337,25 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
     );
   }
 
+  Future<void> _showHistory() async {
+    final restored = await showNoteHistoryDialog(
+      context,
+      noteId: widget.note.id!,
+    );
+
+    if (restored == null || !mounted) return;
+
+    setState(() {
+      titleController.text = restored.title;
+      descriptionController.text = restored.description;
+    });
+
+    ErrorPresenter.showSuccess(
+      context,
+      "Version restaurée dans le formulaire. Enregistrez pour confirmer.",
+    );
+  }
+
   @override
   void dispose() {
     titleController.dispose();
@@ -387,6 +407,13 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         title: const Text("Modifier la note"),
+        actions: [
+          IconButton(
+            onPressed: _showHistory,
+            icon: const Icon(Icons.history),
+            tooltip: "Historique des modifications",
+          ),
+        ],
       ),
 
       body: SingleChildScrollView(

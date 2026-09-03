@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../models/attachment_model.dart';
 import '../models/category_model.dart';
 import '../models/note_model.dart';
+import '../models/note_version_model.dart';
 import '../models/reminder_model.dart';
 import '../models/sync_queue_entry.dart';
 
@@ -30,7 +31,7 @@ class SqliteService {
 
     return await openDatabase(
       path,
-      version: 13,
+      version: 14,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -70,6 +71,24 @@ class SqliteService {
     await _createCategoriesTable(db);
     await _createAttachmentsTable(db);
     await _createRemindersTable(db);
+    await _createNoteVersionsTable(db);
+  }
+
+  Future<void> _createNoteVersionsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE note_versions(
+        id TEXT PRIMARY KEY,
+        note_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        saved_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX idx_note_versions_note ON note_versions(note_id, saved_at DESC)',
+    );
   }
 
   Future<void> _createRemindersTable(Database db) async {
@@ -272,6 +291,11 @@ class SqliteService {
     if (oldVersion < 13) {
       // Rappels et notifications (cf. phase 8).
       await _createRemindersTable(db);
+    }
+
+    if (oldVersion < 14) {
+      // Historique des modifications (cf. phase 10).
+      await _createNoteVersionsTable(db);
     }
   }
 
@@ -623,5 +647,61 @@ class SqliteService {
     final db = await database;
 
     return await db.delete("reminders", where: "id = ?", whereArgs: [id]);
+  }
+
+  // =====================================
+  // HISTORIQUE DES MODIFICATIONS
+  // =====================================
+
+  Future<void> insertNoteVersion(NoteVersion version) async {
+    final db = await database;
+
+    await db.insert("note_versions", {
+      ...version.toMap(),
+      "id": version.id ?? _uuid.v4(),
+    });
+  }
+
+  Future<List<NoteVersion>> getNoteVersions(String noteId) async {
+    final db = await database;
+
+    final result = await db.query(
+      "note_versions",
+      where: "note_id = ?",
+      whereArgs: [noteId],
+      orderBy: "saved_at DESC",
+    );
+
+    return result.map((e) => NoteVersion.fromMap(e)).toList();
+  }
+
+  /// Ne conserve que les [keep] versions les plus récentes d'une note, pour
+  /// éviter une croissance illimitée de l'historique.
+  Future<void> trimNoteVersions(String noteId, {int keep = 20}) async {
+    final db = await database;
+
+    final ids = await db.query(
+      "note_versions",
+      columns: ["id"],
+      where: "note_id = ?",
+      whereArgs: [noteId],
+      orderBy: "saved_at DESC",
+      offset: keep,
+    );
+
+    if (ids.isEmpty) return;
+
+    final idsToDelete = ids.map((row) => row["id"]).toList();
+    await db.delete(
+      "note_versions",
+      where: "id IN (${idsToDelete.map((_) => '?').join(',')})",
+      whereArgs: idsToDelete,
+    );
+  }
+
+  Future<void> deleteNoteVersions(String noteId) async {
+    final db = await database;
+
+    await db.delete("note_versions", where: "note_id = ?", whereArgs: [noteId]);
   }
 }

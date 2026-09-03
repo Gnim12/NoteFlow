@@ -71,6 +71,55 @@ Cette commande télécharge automatiquement toutes les bibliothèques utilisées
 
 ---
 
+# Configuration Firebase (obligatoire)
+
+NoteFlow V2 dépend de Firebase (Authentication, Firestore, Storage). Sans cette
+étape, l'application plante au démarrage.
+
+## 1. Créer le projet Firebase
+
+Sur [console.firebase.google.com](https://console.firebase.google.com) :
+créer un projet, puis ajouter une application **Android** avec le nom de
+package `com.bricebignan.noteflow` (visible dans
+`android/app/build.gradle.kts`).
+
+## 2. Récupérer google-services.json
+
+Télécharger le fichier proposé par la console et le placer exactement ici :
+
+```
+android/app/google-services.json
+```
+
+## 3. Activer les services
+
+- **Authentication** → Sign-in method → activer **Email/Password** et
+  **Google**
+- **Firestore Database** → Créer une base (mode production)
+- **Storage** → Commencer
+
+## 4. Publier les règles de sécurité
+
+Copier le contenu de [`firestore.rules`](../firestore.rules) dans
+Firestore → Règles, et celui de [`storage.rules`](../storage.rules) dans
+Storage → Règles. Cliquer **Publier** dans les deux cas.
+
+## 5. Google Sign-In : empreintes SHA-1
+
+Pour que la connexion Google fonctionne, ajouter les empreintes SHA-1 (debug
+et release) de l'application dans Firebase Console → Paramètres du projet →
+l'app Android → Ajouter une empreinte, puis retélécharger
+`google-services.json`.
+
+Obtenir les empreintes :
+
+```bash
+cd android
+./gradlew signingReport
+```
+
+---
+
 # Vérifier les appareils disponibles
 
 Connecter un téléphone Android ou démarrer un émulateur puis exécuter :
@@ -179,18 +228,14 @@ flutter run
 
 Le projet utilise notamment les packages suivants :
 
-- flutter
-- sqflite
-- provider
-- shared_preferences
-- google_fonts
-- intl
-- image_picker
-- path_provider
-- pdf
-- printing
-- flutter_launcher_icons
-- flutter_native_splash
+- flutter, sqflite, provider, shared_preferences, google_fonts, intl
+- firebase_core, firebase_auth, google_sign_in, cloud_firestore, firebase_storage
+- connectivity_plus (synchronisation hors ligne)
+- image_picker, file_picker, path_provider
+- flutter_map, latlong2, geolocator, geocoding (localisation et carte)
+- flutter_local_notifications, timezone, flutter_timezone (rappels)
+- pdf, printing, url_launcher
+- flutter_launcher_icons, flutter_native_splash
 
 Les dépendances sont définies dans le fichier **pubspec.yaml**.
 
@@ -201,13 +246,18 @@ Les dépendances sont définies dans le fichier **pubspec.yaml**.
 ```
 lib/
 │
-├── database/
 ├── models/
-├── providers/
-├── screens/
+├── views/
+├── controllers/
 ├── services/
+├── providers/
 ├── utils/
-└── widgets/
+├── widgets/
+└── core/errors/
+
+android/app/google-services.json   # à ajouter (non versionné)
+firestore.rules
+storage.rules
 
 assets/
 │
@@ -264,6 +314,24 @@ Vérifier que :
 - le mode développeur est activé ;
 - le débogage USB est activé ;
 - les pilotes USB sont installés.
+
+---
+
+## L'application plante immédiatement au démarrage
+
+C'est presque toujours un problème de configuration Firebase :
+
+- `android/app/google-services.json` est absent ou mal placé
+- Firestore/Storage n'ont pas été activés dans la console
+- Les règles de sécurité n'ont pas été publiées
+
+Revoir la section **Configuration Firebase** ci-dessus.
+
+## "Permission denied" sur Firestore
+
+Vérifier que les règles publiées correspondent exactement au contenu actuel
+de [`firestore.rules`](../firestore.rules), et qu'elles ont bien été
+**publiées** (pas seulement enregistrées dans l'éditeur).
 
 ---
 
