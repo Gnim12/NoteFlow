@@ -46,6 +46,10 @@ class SearchBox extends StatelessWidget {
             itemBuilder: (context) => const [
               PopupMenuItem(value: "recent", child: Text("📅 Plus récentes")),
               PopupMenuItem(value: "old", child: Text("📅 Plus anciennes")),
+              PopupMenuItem(
+                value: "modified",
+                child: Text("✏️ Dernière modification"),
+              ),
               PopupMenuItem(value: "title", child: Text("🔤 Titre (A → Z)")),
               PopupMenuItem(value: "favorite", child: Text("⭐ Favoris")),
               PopupMenuItem(value: "color", child: Text("🎨 Couleur")),

@@ -10,8 +10,11 @@ import '../../models/note_model.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/pdf_service.dart';
 import '../auth/login_screen.dart';
+import '../categories/categories_screen.dart';
 import '../notes/pinned_notes_screen.dart';
+import '../notes/trash_screen.dart';
 import '../profile/profile_screen.dart';
+import '../reminders/reminders_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final String userId;
@@ -256,6 +259,52 @@ class SettingsScreen extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (_) => PinnedNotesScreen(userId: userId),
                 ),
+              );
+            },
+          ),
+
+          // ==========================================
+          // CATÉGORIES
+          // ==========================================
+          buildTile(
+            icon: Icons.category,
+            title: "Catégories",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CategoriesScreen(userId: userId),
+                ),
+              );
+            },
+          ),
+
+          // ==========================================
+          // RAPPELS
+          // ==========================================
+          buildTile(
+            icon: Icons.notifications_outlined,
+            title: "Rappels",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RemindersScreen(userId: userId),
+                ),
+              );
+            },
+          ),
+
+          // ==========================================
+          // CORBEILLE
+          // ==========================================
+          buildTile(
+            icon: Icons.delete_outline,
+            title: "Corbeille",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TrashScreen(userId: userId)),
               );
             },
           ),

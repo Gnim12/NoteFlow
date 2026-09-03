@@ -1,4 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:google_sign_in/google_sign_in.dart'
+    show GoogleSignInException, GoogleSignInExceptionCode;
 
 import '../core/errors/app_error.dart';
 import '../core/errors/result.dart';
@@ -141,6 +143,35 @@ class AuthController {
       return Result.failure(_mapAuthException(e));
     } catch (e) {
       return Result.failure(AppError.persistence('Connexion impossible.', e));
+    }
+  }
+
+  /// ==========================
+  /// CONNEXION GOOGLE
+  /// ==========================
+  Future<Result<User>> loginWithGoogle() async {
+    try {
+      final credential = await _authService.signInWithGoogle();
+
+      final firebaseUser = credential.user;
+      if (firebaseUser == null) {
+        return Result.failure(AppError.auth('Connexion Google impossible.'));
+      }
+
+      return Result.success(_mapUser(firebaseUser));
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return Result.failure(AppError.validation('Connexion annulée.'));
+      }
+      return Result.failure(
+        AppError.auth('Connexion Google impossible (${e.code}).'),
+      );
+    } on fb.FirebaseAuthException catch (e) {
+      return Result.failure(_mapAuthException(e));
+    } catch (e) {
+      return Result.failure(
+        AppError.persistence('Connexion Google impossible.', e),
+      );
     }
   }
 

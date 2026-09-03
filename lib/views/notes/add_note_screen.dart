@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../controllers/category_controller.dart';
 import '../../controllers/note_controller.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/error_presenter.dart';
+import '../../models/category_model.dart';
+import '../../models/location_model.dart';
 import '../../models/note_model.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/note_form.dart';
@@ -23,8 +26,30 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   bool isFavorite = false;
 
   int selectedColor = 0xFF2563EB;
+  String? selectedCategoryId;
+  List<String> tags = [];
+  List<Category> categories = [];
+  NoteLocation? location;
 
   bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    loadCategories();
+  }
+
+  Future<void> loadCategories() async {
+    final result = await CategoryController.instance.getCategories(
+      widget.userId,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      categories = result;
+    });
+  }
 
   @override
   void dispose() {
@@ -57,13 +82,18 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       isSaving = true;
     });
 
+    final now = DateTime.now();
     final note = Note(
       userId: widget.userId,
       title: title,
       description: description,
-      createdAt: DateTime.now(),
+      createdAt: now,
+      updatedAt: now,
       color: selectedColor,
       isFavorite: isFavorite,
+      categoryId: selectedCategoryId,
+      tags: tags,
+      location: location,
     );
 
     await NoteController.instance.createNote(note);
@@ -100,6 +130,25 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           onColorChanged: (color) {
             setState(() {
               selectedColor = color;
+            });
+          },
+          categories: categories,
+          selectedCategoryId: selectedCategoryId,
+          onCategoryChanged: (categoryId) {
+            setState(() {
+              selectedCategoryId = categoryId;
+            });
+          },
+          tags: tags,
+          onTagsChanged: (value) {
+            setState(() {
+              tags = value;
+            });
+          },
+          location: location,
+          onLocationChanged: (value) {
+            setState(() {
+              location = value;
             });
           },
         ),

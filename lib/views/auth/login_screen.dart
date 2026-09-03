@@ -27,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   bool obscurePassword = true;
   bool isLoading = false;
+  bool isGoogleLoading = false;
 
   late AnimationController _controller;
   late Animation<double> _fade;
@@ -92,6 +93,32 @@ class _LoginScreenState extends State<LoginScreen>
     final user = result.value!;
 
     // Firebase Authentication conserve la session automatiquement.
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomeScreen(user: user)),
+    );
+  }
+
+  Future<void> loginWithGoogle() async {
+    setState(() {
+      isGoogleLoading = true;
+    });
+
+    final result = await AuthController.instance.loginWithGoogle();
+
+    if (!mounted) return;
+
+    setState(() {
+      isGoogleLoading = false;
+    });
+
+    if (result.isFailure) {
+      ErrorPresenter.showError(context, result.error!);
+      return;
+    }
+
+    final user = result.value!;
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => HomeScreen(user: user)),
@@ -169,6 +196,51 @@ class _LoginScreenState extends State<LoginScreen>
                           text: isLoading ? "Connexion..." : "Se connecter",
                           icon: Icons.login_rounded,
                           onPressed: isLoading ? null : login,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: Theme.of(context).dividerColor)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              child: Text(
+                                "ou",
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                            Expanded(child: Divider(color: Theme.of(context).dividerColor)),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: OutlinedButton.icon(
+                            onPressed: isGoogleLoading ? null : loginWithGoogle,
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            icon: isGoogleLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.g_mobiledata_rounded, size: 26),
+                            label: Text(
+                              isGoogleLoading
+                                  ? "Connexion..."
+                                  : "Continuer avec Google",
+                            ),
+                          ),
                         ),
 
                         const SizedBox(height: 20),

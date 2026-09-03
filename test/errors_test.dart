@@ -33,6 +33,7 @@ void main() {
         title: 'Note privée',
         description: 'Visible uniquement par son propriétaire.',
         createdAt: DateTime.utc(2026, 7, 30),
+        updatedAt: DateTime.utc(2026, 7, 30),
       );
 
       final restored = Note.fromMap(note.toMap());
@@ -47,6 +48,7 @@ void main() {
         title: 'Initiale',
         description: 'Contenu',
         createdAt: DateTime.utc(2026, 7, 30),
+        updatedAt: DateTime.utc(2026, 7, 30),
       );
 
       expect(note.copyWith(title: 'Modifiée').userId, '7');

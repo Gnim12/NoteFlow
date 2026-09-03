@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../controllers/auth_controller.dart';
+import '../../controllers/category_controller.dart';
 import '../../controllers/note_controller.dart';
+import '../../controllers/reminder_controller.dart';
+import '../../models/category_model.dart';
 import '../../models/note_model.dart';
 import '../../models/user_model.dart';
+import '../../services/sync_service.dart';
 import '../../widgets/dashboard_card.dart';
 import '../../widgets/header_home.dart';
 import '../../widgets/note_card.dart';
 import '../../widgets/search_box.dart';
+import '../../widgets/sync_status_badge.dart';
 import '../notes/add_note_screen.dart';
 import '../notes/edit_note_screen.dart';
 
@@ -22,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final NoteController _noteController = NoteController.instance;
+  final CategoryController _categoryController = CategoryController.instance;
 
   int totalNotes = 0;
   int totalFavorites = 0;
@@ -29,21 +35,36 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedSort = "recent";
   List<Note> notes = [];
   List<Note> filteredNotes = [];
+  List<Category> categories = [];
+  String? selectedCategoryId;
 
   bool isLoading = true;
   User? currentUser;
+  int pendingSyncCount = 0;
 
   final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    SyncService.instance.watchConnectivity(widget.user.id);
     initialize();
+  }
+
+  @override
+  void dispose() {
+    SyncService.instance.stopWatchingConnectivity();
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> initialize() async {
     await loadCurrentUser();
+    await _noteController.syncFromCloud(widget.user.id);
     await loadNotes();
+    // Android annule les alarmes programmées après un redémarrage : on les
+    // reprogramme à chaque ouverture de l'accueil.
+    ReminderController.instance.rescheduleAll(widget.user.id);
   }
 
   Future<void> loadCurrentUser() async {
@@ -53,22 +74,37 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> loadNotes() async {
     final result = await _noteController.getNotes(widget.user.id);
     final sorted = _noteController.sortPinnedFirst(result);
+    final pending = await _noteController.pendingSyncCount(widget.user.id);
+    final loadedCategories = await _categoryController.getCategories(
+      widget.user.id,
+    );
+
+    if (!mounted) return;
 
     setState(() {
       notes = sorted;
-      filteredNotes = sorted;
+      categories = loadedCategories;
+      filteredNotes = _applyCategoryFilter(sorted);
 
       totalNotes = sorted.length;
       totalFavorites = _noteController.favoritesOnly(sorted).length;
       todayNotes = _noteController.createdToday(sorted).length;
+      pendingSyncCount = pending;
 
       isLoading = false;
     });
   }
 
+  List<Note> _applyCategoryFilter(List<Note> source) {
+    return _noteController.filterByCategory(source, selectedCategoryId);
+  }
+
   void searchNotes(String query) {
     setState(() {
-      filteredNotes = _noteController.search(notes, query);
+      filteredNotes = _noteController.search(
+        _applyCategoryFilter(notes),
+        query,
+      );
     });
   }
 
@@ -79,21 +115,29 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void filterByCategory(String? categoryId) {
+    setState(() {
+      selectedCategoryId = categoryId;
+      filteredNotes = _applyCategoryFilter(notes);
+    });
+  }
+
   void showAllNotes() {
     setState(() {
+      selectedCategoryId = null;
       filteredNotes = List.from(notes);
     });
   }
 
   void showFavorites() {
     setState(() {
-      filteredNotes = _noteController.favoritesOnly(notes);
+      filteredNotes = _noteController.favoritesOnly(_applyCategoryFilter(notes));
     });
   }
 
   void showTodayNotes() {
     setState(() {
-      filteredNotes = _noteController.createdToday(notes);
+      filteredNotes = _noteController.createdToday(_applyCategoryFilter(notes));
     });
   }
 
@@ -113,8 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
-        title: const Text("Supprimer"),
-        content: const Text("Voulez-vous vraiment supprimer cette note ?"),
+        title: const Text("Déplacer vers la corbeille"),
+        content: const Text("Voulez-vous déplacer cette note vers la corbeille ?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -122,14 +166,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Supprimer"),
+            child: const Text("Déplacer"),
           ),
         ],
       ),
     );
 
     if (confirm == true) {
-      await _noteController.deleteNote(id: note.id!, userId: note.userId);
+      await _noteController.moveToTrash(note);
       loadNotes();
     }
   }
@@ -168,7 +212,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       HeaderHome(user: currentUser ?? widget.user),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+                      SyncStatusBadge(pendingCount: pendingSyncCount),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           DashboardCard(
@@ -200,6 +246,37 @@ class _HomeScreenState extends State<HomeScreen> {
                         onChanged: searchNotes,
                         onSortSelected: sortNotes,
                       ),
+                      if (categories.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          height: 36,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              ChoiceChip(
+                                label: const Text("Toutes"),
+                                selected: selectedCategoryId == null,
+                                onSelected: (_) => filterByCategory(null),
+                              ),
+                              const SizedBox(width: 8),
+                              ...categories.map(
+                                (category) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: ChoiceChip(
+                                    avatar: CircleAvatar(
+                                      backgroundColor: Color(category.color),
+                                    ),
+                                    label: Text(category.name),
+                                    selected: selectedCategoryId == category.id,
+                                    onSelected: (_) =>
+                                        filterByCategory(category.id),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -245,10 +322,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
+                      final categoryId = filteredNotes[index].categoryId;
+                      final matches = categories.where((c) => c.id == categoryId);
+                      final category = matches.isEmpty ? null : matches.first;
+
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: NoteCard(
                           note: filteredNotes[index],
+                          category: category,
                           onTap: () async {
                             final result = await Navigator.push(
                               context,

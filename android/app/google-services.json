@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "111184844205",
+    "project_id": "noteflow-7ac29",
+    "storage_bucket": "noteflow-7ac29.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:111184844205:android:9e1685c022308baa8b7d24",
+        "android_client_info": {
+          "package_name": "com.bricebignan.noteflow"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "111184844205-9b74r38gujqj0sp3rs37cf50icra1ejo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bricebignan.noteflow",
+            "certificate_hash": "ce9d994aa1c05b8c986966c9e273f445692bbcf9"
+          }
+        },
+        {
+          "client_id": "111184844205-qlqvf5v30mcmefd97k4k997ngbpreboq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bricebignan.noteflow",
+            "certificate_hash": "e732ec1911b4167bbc5528b6c566d801acd540d7"
+          }
+        },
+        {
+          "client_id": "111184844205-andos9pjmh8k8bmsmuibel521siofnrt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYXyvFmuw1oWPIedNJjfLKs1lIPL0P2mk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "111184844205-andos9pjmh8k8bmsmuibel521siofnrt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
