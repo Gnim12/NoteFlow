@@ -14,6 +14,7 @@ import '../../widgets/note_card.dart';
 import '../../widgets/search_box.dart';
 import '../../widgets/sync_status_badge.dart';
 import '../notes/edit_note_screen.dart';
+import '../notes/note_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final User user;
@@ -318,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    EditNoteScreen(note: filteredNotes[index]),
+                                    NoteDetailScreen(note: filteredNotes[index]),
                               ),
                             );
 

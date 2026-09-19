@@ -31,43 +31,6 @@ class SettingsScreen extends StatelessWidget {
   );
 
   // =====================================================
-  // SUPPRIMER TOUTES LES NOTES
-  // =====================================================
-
-  Future<void> _deleteAllNotes(BuildContext context) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Supprimer toutes les notes"),
-        content: const Text(
-          "Cette action est irréversible.\n\nVoulez-vous continuer ?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Annuler"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Supprimer"),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await NoteController.instance.deleteAllNotes(userId);
-
-      if (context.mounted) {
-        ErrorPresenter.showSuccess(
-          context,
-          'Toutes les notes ont été supprimées.',
-        );
-      }
-    }
-  }
-
-  // =====================================================
   // EXPORT PDF
   // =====================================================
 
@@ -333,16 +296,6 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.picture_as_pdf,
             title: "Exporter les notes (PDF)",
             onTap: () => _exportPdf(context),
-          ),
-
-          // ==========================================
-          // SUPPRIMER TOUTES LES NOTES
-          // ==========================================
-          buildTile(
-            icon: Icons.delete_forever,
-            color: Colors.red,
-            title: "Supprimer toutes les notes",
-            onTap: () => _deleteAllNotes(context),
           ),
 
           // ==========================================

@@ -6,7 +6,7 @@ Guide succinct des principales fonctionnalités de l'application.
 
 ## Se connecter
 
-- **Créer un compte** : email + mot de passe (6 caractères minimum), ou
+- **Créer un compte** : email + mot de passe (8 caractères minimum), ou
   **Continuer avec Google**.
 - **Mot de passe oublié** : saisir son email pour recevoir un lien de
   réinitialisation.

@@ -53,7 +53,7 @@ class AuthController {
         return AppError.validation('Adresse email invalide.');
       case 'weak-password':
         return AppError.validation(
-          'Le mot de passe doit contenir au moins 6 caractères.',
+          'Le mot de passe doit contenir au moins 8 caractères.',
         );
       case 'user-not-found':
       case 'wrong-password':
@@ -92,10 +92,10 @@ class AuthController {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return Result.failure(
         AppError.validation(
-          'Le mot de passe doit contenir au moins 6 caractères.',
+          'Le mot de passe doit contenir au moins 8 caractères.',
         ),
       );
     }
@@ -275,10 +275,10 @@ class AuthController {
   }
 
   Future<Result<void>> changePassword(String newPassword) async {
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       return Result.failure(
         AppError.validation(
-          'Le mot de passe doit contenir au moins 6 caractères.',
+          'Le mot de passe doit contenir au moins 8 caractères.',
         ),
       );
     }

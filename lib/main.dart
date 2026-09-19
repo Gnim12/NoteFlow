@@ -9,7 +9,7 @@ import 'services/geofence_service.dart';
 import 'services/navigation_service.dart';
 import 'services/notification_service.dart';
 import 'utils/app_theme.dart';
-import 'views/notes/edit_note_screen.dart';
+import 'views/notes/note_detail_screen.dart';
 import 'views/splash/splash_screen.dart';
 
 void main() async {
@@ -52,7 +52,7 @@ Future<void> _openNoteFromNotification(String noteId) async {
   final note = await NoteController.instance.getNoteById(noteId, user.id);
   if (note == null) return;
 
-  NavigationService.push(EditNoteScreen(note: note));
+  NavigationService.push(NoteDetailScreen(note: note));
 }
 
 class NoteFlowApp extends StatelessWidget {

@@ -4,6 +4,7 @@ import '../../controllers/note_controller.dart';
 import '../../models/note_model.dart';
 import '../../widgets/note_card.dart';
 import 'edit_note_screen.dart';
+import 'note_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   final String userId;
@@ -38,6 +39,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Future<void> _openNote(Note note) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
+    );
+
+    if (result == true) load();
+  }
+
+  Future<void> _editNote(Note note) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => EditNoteScreen(note: note)),
@@ -114,7 +124,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   return NoteCard(
                     note: note,
                     onTap: () => _openNote(note),
-                    onEdit: () => _openNote(note),
+                    onEdit: () => _editNote(note),
                     onDelete: () => _delete(note),
                     onFavorite: () => _toggleFavorite(note),
                     onPin: () => _togglePin(note),
